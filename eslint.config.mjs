@@ -5,12 +5,51 @@ import nextTs from "eslint-config-next/typescript";
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
-  // Override default ignores of eslint-config-next.
+  
+  {
+    files: ["**/*.ts", "**/*.tsx"],
+    languageOptions: {
+      parserOptions: {
+        tsconfigRootDir: import.meta.dirname,
+        project: "./tsconfig.json",
+      },
+    },
+    rules: {
+      "@typescript-eslint/naming-convention": [
+        "error",
+        {
+          selector: "default",
+          format: ["camelCase"],
+          leadingUnderscore: "allow",
+        },
+        {
+          selector: "variable",
+          types: ["function"],
+          format: ["camelCase", "PascalCase"], 
+        },
+        {
+          selector: "typeLike",
+          format: ["PascalCase"], 
+        },
+      ],
+
+      "no-unused-vars": "warn", 
+      "no-console": ["warn", { allow: ["warn", "error"] }], 
+      "prefer-const": "error", 
+
+
+      "react/self-closing-comp": "error", 
+      "@next/next/no-img-element": "error", 
+      "@next/next/no-html-link-for-pages": "error", 
+    },
+  },
+
   globalIgnores([
-    // Default ignores of eslint-config-next:
     ".next/**",
     "out/**",
     "build/**",
+    "node_modules/**",
+    "public/**",
     "next-env.d.ts",
   ]),
 ]);
