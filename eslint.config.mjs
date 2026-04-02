@@ -1,4 +1,5 @@
 import { defineConfig, globalIgnores } from "eslint/config";
+import eslintConfigPrettier from "eslint-config-prettier";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
 
@@ -23,9 +24,17 @@ const eslintConfig = defineConfig([
           leadingUnderscore: "allow",
         },
         {
+          selector: "function",
+          format: ["camelCase", "PascalCase"],
+        },
+        {
           selector: "variable",
           types: ["function"],
           format: ["camelCase", "PascalCase"], 
+        },
+        {
+          selector: "import",
+          format: ["camelCase", "PascalCase"],
         },
         {
           selector: "typeLike",
@@ -52,6 +61,8 @@ const eslintConfig = defineConfig([
     "public/**",
     "next-env.d.ts",
   ]),
+
+  eslintConfigPrettier,
 ]);
 
 export default eslintConfig;
