@@ -2,7 +2,7 @@
 import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
 let supabaseClient: ReturnType<typeof createClient> | null = null
 
@@ -17,6 +17,3 @@ export function getSupabaseClient() {
   
   return supabaseClient
 }
-
-// Para compatibilidad, exporta como variable
-export const supabase = getSupabaseClient()

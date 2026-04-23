@@ -2,15 +2,25 @@
 "use client"; // Obligatorio para usar hooks de React
 
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase/client'; // Tu cliente de supabase
+import { getSupabaseClient } from '@/lib/supabase/client';
 
 export default function TestPage() {
   const [status, setStatus] = useState("Cargando...");
 
   useEffect(() => {
     async function verificar() {
+      let client;
+
+      try {
+        client = getSupabaseClient();
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Error desconocido al inicializar Supabase';
+        setStatus(`❌ ${message}`);
+        return;
+      }
+
       // Hacemos una llamada simple a la autenticación para ver si responde
-      const { error } = await supabase.auth.getSession();
+      const { error } = await client.auth.getSession();
 
       if (error) {
         setStatus(`❌ Error de conexión: ${error.message}`);
