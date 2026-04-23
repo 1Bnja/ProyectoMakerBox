@@ -3,70 +3,67 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <main className="mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-6xl items-center px-6 py-16 lg:px-8">
+      <section className="grid w-full gap-10 rounded-[2rem] border border-white/70 bg-white/80 p-8 shadow-[0_24px_80px_rgba(107,63,160,0.12)] backdrop-blur-sm md:p-12 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
+        <div className="space-y-8">
+          <div className="inline-flex items-center gap-3 rounded-full border border-purple-200 bg-purple-50 px-4 py-2 text-sm font-medium text-[#6B3FA0]">
+            <span className="h-2.5 w-2.5 rounded-full bg-[#E94E77]" />
+            MakerBox
+          </div>
+
+          <div className="space-y-5">
+            <h1 className="max-w-2xl text-4xl font-semibold tracking-tight text-slate-900 md:text-5xl">
+              Co-creación e innovación con una identidad clara y moderna.
+            </h1>
+            <p className="max-w-xl text-lg leading-8 text-slate-600">
+              Un espacio pensado para equipos que construyen, validan y lanzan ideas con una experiencia visual limpia, consistente y cercana.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-4 sm:flex-row">
+            <Link
+              href="/login"
+              className="inline-flex h-12 items-center justify-center rounded-2xl bg-gradient-to-r from-purple-600 to-pink-500 px-6 text-sm font-semibold text-white shadow-lg shadow-pink-500/20 transition hover:from-purple-700 hover:to-pink-600 hover:shadow-xl hover:shadow-pink-500/30"
             >
-              Templates
-            </a>{" "}
-            or the{" "}
+              Ir a Login
+            </Link>
             <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+              href="#features"
+              className="inline-flex h-12 items-center justify-center rounded-2xl border border-zinc-200 bg-white px-6 text-sm font-semibold text-zinc-700 transition hover:border-pink-200 hover:text-pink-500"
             >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+              Ver beneficios
+            </a>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
+
+        <div className="grid gap-4 rounded-[1.75rem] bg-[linear-gradient(180deg,rgba(255,255,255,0.95),rgba(248,245,255,0.9))] p-6 ring-1 ring-slate-200/70 md:p-8">
+          <div className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white p-4 shadow-sm">
             <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+              src="/logo.jpg"
+              alt="MakerBox logo"
+              width={640}
+              height={220}
+              className="h-auto w-full rounded-[1rem] object-contain"
+              priority
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-          <Link
-            href="/login"
-            className="flex h-12 w-full items-center justify-center rounded-full bg-black text-white px-5 transition-colors hover:bg-[#383838] md:w-[158px]"
-          >
-            Ir a Login
-          </Link>
+          </div>
+
+          <div id="features" className="grid gap-4 sm:grid-cols-3">
+            <article className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200/70">
+              <p className="text-sm font-semibold text-[#6B3FA0]">Purple</p>
+              <p className="mt-2 text-sm leading-6 text-zinc-500">Base sólida para jerarquía visual y marca.</p>
+            </article>
+            <article className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200/70">
+              <p className="text-sm font-semibold text-[#E94E77]">Pink</p>
+              <p className="mt-2 text-sm leading-6 text-zinc-500">Acentos cálidos para interacción y foco.</p>
+            </article>
+            <article className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200/70">
+              <p className="text-sm font-semibold text-[#3AB0FF]">Sky</p>
+              <p className="mt-2 text-sm leading-6 text-zinc-500">Ligereza y contraste para resaltar acciones.</p>
+            </article>
+          </div>
         </div>
-      </main>
-    </div>
+      </section>
+    </main>
   );
 }
