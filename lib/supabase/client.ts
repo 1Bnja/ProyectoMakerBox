@@ -19,7 +19,4 @@ export function getSupabaseClient() {
 }
 
 // Para compatibilidad, exporta como variable
-export const supabase = {
-  from: (table: string) => getSupabaseClient().from(table),
-  auth: getSupabaseClient().auth,
-} as any
+export const supabase = getSupabaseClient()
