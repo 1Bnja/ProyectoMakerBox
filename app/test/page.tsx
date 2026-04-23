@@ -10,7 +10,7 @@ export default function TestPage() {
   useEffect(() => {
     async function verificar() {
       // Hacemos una llamada simple a la autenticación para ver si responde
-      const { data, error } = await supabase.auth.getSession();
+      const { error } = await supabase.auth.getSession();
 
       if (error) {
         setStatus(`❌ Error de conexión: ${error.message}`);
@@ -36,3 +36,4 @@ export default function TestPage() {
     </div>
   );
 }
+
