@@ -1,4 +1,4 @@
-name: CI basico
+name: CI y Versionado Automatico
 
 on:
   push:
@@ -13,7 +13,6 @@ on:
 jobs:
   calidad:
     runs-on: ubuntu-latest
-
     steps:
       - name: Descargar codigo
         uses: actions/checkout@v4
@@ -32,3 +31,30 @@ jobs:
 
       - name: Compilar proyecto
         run: npm run build
+
+  release:
+    name: Crear Release y Versionado
+    needs: calidad # Solo corre si el job de calidad termina en verde
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Permite crear tags y releases
+      pull-requests: write # Permite comentar en PRs
+    steps:
+      - name: Descargar codigo
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false # Requerido para que semantic-release maneje el token
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx semantic-release
