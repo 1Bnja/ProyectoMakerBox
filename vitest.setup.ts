@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 
@@ -6,3 +7,6 @@ vi.mock('next/font/google', () => ({
   Geist: () => ({ variable: 'geist-sans' }),
   Geist_Mono: () => ({ variable: 'geist-mono' }),
 }));
+=======
+import '@testing-library/jest-dom';
+>>>>>>> origin/feature/reportes-y-calidad
