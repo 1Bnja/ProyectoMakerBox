@@ -1,11 +1,17 @@
 import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
+import path from 'path' // Necesitas importar esto
 
 export default defineConfig({
   plugins: [react()],
   test: {
-    environment: 'jsdom', 
+    environment: 'jsdom',
     globals: true,
     setupFiles: './vitest.setup.ts',
+  },
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './'), // Esto le dice a Vitest que @ es la raíz
+    },
   },
 })
