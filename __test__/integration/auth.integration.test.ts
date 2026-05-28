@@ -28,6 +28,7 @@ describe('Integración Supabase Auth', () => {
 
   it('debería iniciar sesión con credenciales válidas', async () => {
     const mockUser = { id: 'user-123', email: 'usuario@ejemplo.com' }
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     const mockSession = { access_token: 'token-abc123', user: mockUser }
 
     mockSupabaseAuth.signInWithPassword.mockResolvedValue({
@@ -84,6 +85,7 @@ describe('Integración Supabase Auth', () => {
 
   it('debería obtener la sesión activa del usuario autenticado', async () => {
     const mockSession = {
+        // eslint-disable-next-line @typescript-eslint/naming-convention
       access_token: 'token-abc123',
       user: { id: 'user-123', email: 'usuario@ejemplo.com' },
     }
