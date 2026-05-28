@@ -1,4 +1,4 @@
-name: CI basico
+name: CI
 
 on:
   push:
@@ -33,7 +33,13 @@ jobs:
       - name: Compilar proyecto
         run: npm run build
 
-      - name: Ejecutar tests con cobertura
+      - name: Ejecutar tests unitarios
+        run: npm run test:unit
+
+      - name: Ejecutar tests de integración
+        run: npm run test:integration
+
+      - name: Generar informe de cobertura (unitarios + integración)
         run: npm run test:coverage
 
       - name: Subir cobertura a Codecov
