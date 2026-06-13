@@ -18,8 +18,8 @@ export default function LoginPage() {
 
     const resultado = await login(email, password)
 
-    if ('error' in resultado) {
-      setError(resultado.error)
+      if ('error' in resultado) {
+        setError(resultado.error ?? 'Ocurrió un error al iniciar sesión')
       return
     }
 
