@@ -2,7 +2,7 @@
 
 import { useState, ChangeEvent, FormEvent } from 'react'
 import { getSupabaseClient } from '@/lib/supabase/client'
-import { validarDatosImpresion, calcularVolumenSTL } from '@/lib/flujo/validacionesImpresion'
+import { validarDatosImpresion } from '@/lib/flujo/validacionesImpresion'
 
 interface FormDatos {
   nombre: string
@@ -33,20 +33,18 @@ export default function SolicitantePage() {
       setMensaje(null);
 
       
-      const { calcularVolumenSTL } = await import('@/lib/flujo/validacionesImpresion');
+      const { calcularVolumenSTL: extractorVolumen } = await import('@/lib/flujo/validacionesImpresion');
 
       const reader = new FileReader();
       
       // Evento que se ejecuta cuando el navegador termina de leer el archivo binario
-      reader.onload = (event) => {
+      reader.onload = (event: ProgressEvent<FileReader>) => {
         const buffer = event.target?.result as ArrayBuffer;
         let volumenCalculado = 0;
 
-        // Calcular el volumen real si el archivo es un STL
-        if (file.name.toLowerCase().endsWith('.stl')) {
-          volumenCalculado = calcularVolumenSTL(buffer);
+        if (file.name.toLowerCase().endsWith('.stl') && buffer) {
+          volumenCalculado = extractorVolumen(buffer);
         } else {
-          // Si es .obj u otro, le asignamos un volumen mínimo simulado por limitaciones del parseo nativo
           volumenCalculado = 10; 
         }
 
@@ -68,7 +66,7 @@ export default function SolicitantePage() {
 
         setMensaje(null);
         setArchivo(file);
-        console.log(`Volumen calculado con éxito para ${file.name}: ${volumenCalculado} cm³`);
+        
       };
 
       reader.onerror = () => {
@@ -108,15 +106,15 @@ export default function SolicitantePage() {
 
       //Insertar metadatos de la solicitud en la tabla 'impresiones'
        const solicitudDatos = {
-        user_id: user.id,
-        tipo: 'PERSONAL',   
-        estado: 'PENDIENTE', 
-        stl_path: filePath,             
-        comentario: `Proyecto: ${datos.nombre}. Descripción: ${datos.descripcion}. Notas: ${datos.comentarios}`,
-        created_at: new Date().toISOString(),
-        curso_id: null,
-        grupo_id: null,
-        ayudante_id: null
+        'user_id': user.id,
+        'tipo': 'PERSONAL',   
+        'estado': 'PENDIENTE', 
+        'stl_path': filePath,             
+        'comentario': `Proyecto: ${datos.nombre}. Descripción: ${datos.descripcion}. Notas: ${datos.comentarios}`,
+        'created_at': new Date().toISOString(),
+        'curso_id': null,
+        'grupo_id': null,
+        'ayudante_id': null
       }
 
       const { error: insertError } = await supabase
