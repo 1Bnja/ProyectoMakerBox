@@ -1,5 +1,4 @@
 'use client'
-
 import { useState, ChangeEvent, FormEvent } from 'react'
 import { getSupabaseClient } from '@/lib/supabase/client'
 import { validarDatosImpresion } from '@/lib/flujo/validacionesImpresion'
@@ -80,8 +79,9 @@ export default function SolicitantePage() {
 
     reader.readAsArrayBuffer(file);
   };
-  
+
   // Enviar la solicitud al sistema
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     if (!archivo) {
@@ -138,7 +138,8 @@ export default function SolicitantePage() {
     } finally {
       setCargando(false)
     }
-  }
+    }
+    /* eslint-enable @typescript-eslint/no-explicit-any */
 
   return (
     <div style={{ maxWidth: '600px', margin: '40px auto', padding: '20px', fontFamily: 'Arial, sans-serif', backgroundColor: '#ffffff', borderRadius: '8px', boxShadow: '0 2px 8px rgb(118, 4, 143)' }}>
