@@ -30,6 +30,18 @@ describe("AUTH-01 - login()", () => {
     expect(resultado).toEqual({ error: "No rows found" })
   })
 
+  it("retorna error genérico si la API no envía mensaje", async () => {
+    vi.spyOn(global, "fetch").mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+      json: async () => ({}),
+    } as Response)
+
+    const resultado = await login("usuario@ejemplo.com", "contrasena123")
+
+    expect(resultado).toEqual({ error: "Error al iniciar sesión" })
+  })
+
   it("retorna el rol del usuario cuando el login es exitoso", async () => {
     vi.spyOn(global, "fetch").mockResolvedValueOnce({
       ok: true,
