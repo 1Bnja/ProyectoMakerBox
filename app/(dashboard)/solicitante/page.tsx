@@ -35,7 +35,7 @@ const colsHistorial: Column<SolicitudHist>[] = [
         key: "detalle",
         header: "",
         render: () => (
-            <button className="rounded-md border border-[#1e2235] px-2.5 py-1 text-xs text-[#64748b] transition-colors hover:border-cyan-500/30 hover:text-cyan-400">
+            <button className="rounded-md border border-slate-200 px-2.5 py-1 text-xs text-slate-500 transition-colors hover:border-[#E94E77]/40 hover:text-[#E94E77]">
                 Ver detalle
             </button>
         ),
@@ -219,15 +219,15 @@ export default function SolicitantePage() {
             />
 
             <main className="flex-1 overflow-auto">
-                <header className="flex items-center justify-between border-b border-[#1e2235] px-8 py-5">
-                    <h1 className="text-lg font-semibold text-[#e2e8f0] capitalize">
+                <header className="flex items-center justify-between border-b border-slate-200 bg-white/70 px-8 py-5 backdrop-blur-sm">
+                    <h1 className="text-lg font-semibold text-slate-900 capitalize">
                         {tab === "nueva-solicitud"
                             ? "Nueva Solicitud"
                             : "Mis Solicitudes"}
                     </h1>
-                    <div className="flex items-center gap-3 text-sm text-[#64748b]">
+                    <div className="flex items-center gap-3 text-sm text-slate-500">
                         <span className="flex items-center gap-2">
-                            <span className="h-2 w-2 rounded-full bg-green-500" />
+                            <span className="h-2 w-2 rounded-full bg-emerald-500" />
                             Conectado
                         </span>
                     </div>
@@ -269,6 +269,7 @@ export default function SolicitantePage() {
 
                             <form
                                 onSubmit={handleSubmit}
+                                className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(233,78,119,0.06)]"
                                 style={{
                                     display: "flex",
                                     flexDirection: "column",
@@ -286,7 +287,7 @@ export default function SolicitantePage() {
                                         htmlFor="nombre"
                                         style={{
                                             fontWeight: "bold",
-                                            color: "#06b6d4",
+                                            color: "#6B3FA0",
                                             fontSize: "14px",
                                         }}
                                     >
@@ -300,7 +301,7 @@ export default function SolicitantePage() {
                                         value={datos.nombre}
                                         onChange={handleInputChange}
                                         placeholder="Ej: Engranaje de ..."
-                                        className="w-full rounded-lg border border-[#1e2235] bg-[#151821] px-3 py-2.5 text-sm text-[#e2e8f0] outline-none placeholder:text-[#475569] focus:border-cyan-500/50"
+                                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#6B3FA0] focus:ring-4 focus:ring-[#6B3FA0]/15"
                                     />
                                 </div>
 
@@ -315,7 +316,7 @@ export default function SolicitantePage() {
                                         htmlFor="descripcion"
                                         style={{
                                             fontWeight: "bold",
-                                            color: "#06b6d4",
+                                            color: "#6B3FA0",
                                             fontSize: "14px",
                                         }}
                                     >
@@ -329,7 +330,7 @@ export default function SolicitantePage() {
                                         value={datos.descripcion}
                                         onChange={handleInputChange}
                                         placeholder="Detalla las dimensiones aproximadas o el propósito de la pieza..."
-                                        className="w-full rounded-lg border border-[#1e2235] bg-[#151821] px-3 py-2.5 text-sm text-[#e2e8f0] outline-none placeholder:text-[#475569] focus:border-cyan-500/50"
+                                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#6B3FA0] focus:ring-4 focus:ring-[#6B3FA0]/15"
                                     />
                                 </div>
 
@@ -343,7 +344,7 @@ export default function SolicitantePage() {
                                     <span
                                         style={{
                                             fontWeight: "bold",
-                                            color: "#06b6d4",
+                                            color: "#6B3FA0",
                                             fontSize: "14px",
                                         }}
                                     >
@@ -361,7 +362,7 @@ export default function SolicitantePage() {
 
                                     <label
                                         htmlFor="archivo"
-                                        className="block cursor-pointer rounded-lg border-2 border-dashed border-[#1e2235] bg-[#0f1119] px-4 py-6 text-center text-sm text-[#64748b] transition-all hover:border-cyan-500/30 hover:bg-cyan-500/5"
+                                        className="block cursor-pointer rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500 transition-all hover:border-[#6B3FA0]/40 hover:bg-[#6B3FA0]/[0.04]"
                                     >
                                         {archivo
                                             ? `Archivo seleccionado: ${archivo.name}`
@@ -380,7 +381,7 @@ export default function SolicitantePage() {
                                         htmlFor="comentarios"
                                         style={{
                                             fontWeight: "bold",
-                                            color: "#06b6d4",
+                                            color: "#6B3FA0",
                                             fontSize: "14px",
                                         }}
                                     >
@@ -393,17 +394,17 @@ export default function SolicitantePage() {
                                         value={datos.comentarios}
                                         onChange={handleInputChange}
                                         placeholder="Especificaciones de color, relleno o material si tienes alguna preferencia..."
-                                        className="w-full rounded-lg border border-[#1e2235] bg-[#151821] px-3 py-2.5 text-sm text-[#e2e8f0] outline-none placeholder:text-[#475569] focus:border-cyan-500/50"
+                                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#6B3FA0] focus:ring-4 focus:ring-[#6B3FA0]/15"
                                     />
                                 </div>
 
                                 <button
                                     type="submit"
                                     disabled={cargando}
-                                    className={`w-full rounded-lg py-3 text-sm font-bold text-white transition-colors ${
+                                    className={`w-full rounded-lg py-3 text-sm font-bold text-white shadow-sm transition-colors ${
                                         cargando
-                                            ? "bg-[#1e2235] text-[#64748b]"
-                                            : "bg-cyan-500 hover:bg-cyan-600"
+                                            ? "cursor-not-allowed bg-slate-300 text-slate-500"
+                                            : "bg-gradient-to-r from-[#6B3FA0] to-[#E94E77] shadow-[#E94E77]/20 hover:brightness-105"
                                     }`}
                                 >
                                     {cargando
@@ -416,7 +417,7 @@ export default function SolicitantePage() {
 
                     {tab === "solicitudes" && (
                         <section>
-                            <p className="mb-4 text-sm text-[#64748b]">
+                            <p className="mb-4 text-sm text-slate-500">
                                 Historial de tus solicitudes de impresión.
                             </p>
                             <DataTable

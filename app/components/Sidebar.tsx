@@ -1,6 +1,9 @@
 "use client"
 
+import { useState } from "react"
+import { useRouter } from "next/navigation"
 import type { Rol } from "@/lib/auth/roles"
+import { logout } from "@/lib/auth/logout"
 
 interface MenuItem {
     id: string
@@ -43,41 +46,83 @@ interface SidebarProps {
     onTabChange: (tab: string) => void
 }
 
+/* Cada rol hereda un acento de la paleta MakerBox, igual que en la landing. */
+/* eslint-disable @typescript-eslint/naming-convention */
+const accent: Record<Rol, { text: string; activeBg: string; bar: string }> = {
+    ADMIN: { text: "text-[#6B3FA0]", activeBg: "bg-[#6B3FA0]/8", bar: "bg-[#6B3FA0]" },
+    AYUDANTE: { text: "text-[#E94E77]", activeBg: "bg-[#E94E77]/8", bar: "bg-[#E94E77]" },
+    PROFESOR: { text: "text-[#3AB0FF]", activeBg: "bg-[#3AB0FF]/10", bar: "bg-[#3AB0FF]" },
+    ESTUDIANTE: { text: "text-[#6B3FA0]", activeBg: "bg-[#6B3FA0]/8", bar: "bg-[#6B3FA0]" },
+    SOLICITANTE: { text: "text-[#E94E77]", activeBg: "bg-[#E94E77]/8", bar: "bg-[#E94E77]" },
+}
+/* eslint-enable @typescript-eslint/naming-convention */
+
 export function Sidebar({ rol, activeTab, onTabChange }: SidebarProps) {
     const menu = items[rol]
+    const ac = accent[rol]
+    const router = useRouter()
+    const [cerrando, setCerrando] = useState(false)
+
+    async function handleLogout() {
+        setCerrando(true)
+        const resultado = await logout()
+        if ("error" in resultado) {
+            setCerrando(false)
+            return
+        }
+        router.replace("/login")
+    }
 
     return (
-        <aside className="flex h-full w-64 flex-col border-r border-[#1e2235] bg-[#0f1119]">
-            <div className="flex items-center gap-3 border-b border-[#1e2235] px-5 py-5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-500/10 text-xs font-bold text-cyan-400">
+        <aside className="flex h-full w-64 flex-col border-r border-slate-200 bg-white">
+            <div className="flex items-center gap-3 border-b border-slate-200 px-5 py-5">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#6B3FA0] via-[#E94E77] to-[#3AB0FF] text-xs font-bold text-white shadow-sm">
                     MB
                 </div>
                 <div>
-                    <p className="text-sm font-semibold text-[#e2e8f0]">MakerBox</p>
-                    <p className="text-xs text-[#64748b] capitalize">{rol.toLowerCase()}</p>
+                    <p className="text-sm font-semibold text-slate-900">MakerBox</p>
+                    <p className="text-xs text-slate-500 capitalize">{rol.toLowerCase()}</p>
                 </div>
             </div>
 
             <nav className="flex-1 space-y-1 p-3">
-                {menu.map((item) => (
-                    <button
-                        key={item.id}
-                        onClick={() => onTabChange(item.id)}
-                        className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${
-                            activeTab === item.id
-                                ? "bg-cyan-500/10 text-cyan-400"
-                                : "text-[#94a3b8] hover:bg-[#1a1d2e]/50 hover:text-[#e2e8f0]"
-                        }`}
-                    >
-                        <span className="h-5 w-5">{item.icon}</span>
-                        {item.label}
-                    </button>
-                ))}
+                {menu.map((item) => {
+                    const isActive = activeTab === item.id
+                    return (
+                        <button
+                            key={item.id}
+                            onClick={() => onTabChange(item.id)}
+                            className={`relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
+                                isActive
+                                    ? `${ac.activeBg} ${ac.text}`
+                                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                            }`}
+                        >
+                            {isActive && (
+                                <span
+                                    className={`absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full ${ac.bar}`}
+                                />
+                            )}
+                            <span className="h-5 w-5">{item.icon}</span>
+                            {item.label}
+                        </button>
+                    )
+                })}
             </nav>
 
-            <div className="border-t border-[#1e2235] p-4">
-                <div className="flex items-center gap-3 rounded-lg px-3 py-2 text-xs text-[#64748b]">
-                    <span className="h-2 w-2 rounded-full bg-green-500" />
+            <div className="space-y-1 border-t border-slate-200 p-3">
+                <button
+                    onClick={handleLogout}
+                    disabled={cerrando}
+                    className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 transition-all hover:bg-rose-50 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                    <span className="h-5 w-5">
+                        <LogoutSvg />
+                    </span>
+                    {cerrando ? "Cerrando sesión…" : "Cerrar sesión"}
+                </button>
+                <div className="flex items-center gap-3 px-3 py-2 text-xs text-slate-500">
+                    <span className="h-2 w-2 rounded-full bg-emerald-500" />
                     Sistema operativo
                 </div>
             </div>
@@ -154,6 +199,15 @@ function PlusSvg() {
     return (
         <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-full w-full">
             <path d="M10 4v12M4 10h12" />
+        </svg>
+    )
+}
+
+function LogoutSvg() {
+    return (
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-full w-full">
+            <path d="M8 17.5H5A1.5 1.5 0 013.5 16V4A1.5 1.5 0 015 2.5h3" />
+            <path d="M13 14l4-4-4-4M17 10H8" />
         </svg>
     )
 }

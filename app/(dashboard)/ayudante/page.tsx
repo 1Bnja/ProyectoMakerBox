@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { Sidebar } from "@/app/components/Sidebar"
 import { StatusBadge } from "@/app/components/StatusBadge"
+import { StatCard } from "@/app/components/StatCard"
 import { DataTable, type Column } from "@/app/components/DataTable"
 
 interface Solicitud {
@@ -81,15 +82,15 @@ const colsSolicitudes: Column<Solicitud>[] = [
         render: (s) =>
             s.estado === "PENDIENTE" ? (
                 <div className="flex gap-2">
-                    <button className="rounded-md border border-green-500/20 px-2.5 py-1 text-xs text-green-400 transition-colors hover:bg-green-500/10">
+                    <button className="rounded-md border border-emerald-200 px-2.5 py-1 text-xs text-emerald-700 transition-colors hover:bg-emerald-50">
                         Aprobar
                     </button>
-                    <button className="rounded-md border border-red-500/20 px-2.5 py-1 text-xs text-red-400 transition-colors hover:bg-red-500/10">
+                    <button className="rounded-md border border-rose-200 px-2.5 py-1 text-xs text-rose-600 transition-colors hover:bg-rose-50">
                         Rechazar
                     </button>
                 </div>
             ) : (
-                <span className="text-xs text-[#64748b]">—</span>
+                <span className="text-xs text-slate-400">—</span>
             ),
     },
 ]
@@ -115,11 +116,11 @@ export default function AyudantePage() {
             <Sidebar rol="AYUDANTE" activeTab={tab} onTabChange={setTab} />
 
             <main className="flex-1 overflow-auto">
-                <header className="flex items-center justify-between border-b border-[#1e2235] px-8 py-5">
-                    <h1 className="text-lg font-semibold text-[#e2e8f0] capitalize">{tab}</h1>
-                    <div className="flex items-center gap-3 text-sm text-[#64748b]">
+                <header className="flex items-center justify-between border-b border-slate-200 bg-white/70 px-8 py-5 backdrop-blur-sm">
+                    <h1 className="text-lg font-semibold text-slate-900 capitalize">{tab}</h1>
+                    <div className="flex items-center gap-3 text-sm text-slate-500">
                         <span className="flex items-center gap-2">
-                            <span className="h-2 w-2 rounded-full bg-green-500" />
+                            <span className="h-2 w-2 rounded-full bg-emerald-500" />
                             Conectado
                         </span>
                     </div>
@@ -129,13 +130,13 @@ export default function AyudantePage() {
                     {tab === "solicitudes" && (
                         <section>
                             <div className="mb-6 grid grid-cols-4 gap-4">
-                                <StatCard label="Pendientes" value="3" />
-                                <StatCard label="En progreso" value="1" />
-                                <StatCard label="Aprobadas hoy" value="2" />
-                                <StatCard label="Por revisar" value="4" />
+                                <StatCard label="Pendientes" value="3" accent="pink" />
+                                <StatCard label="En progreso" value="1" accent="blue" />
+                                <StatCard label="Aprobadas hoy" value="2" accent="purple" />
+                                <StatCard label="Por revisar" value="4" accent="pink" />
                             </div>
                             <div className="mb-4 flex items-center justify-between">
-                                <p className="text-sm text-[#64748b]">
+                                <p className="text-sm text-slate-500">
                                     {filtro ? `Filtrado por: ${filtro}` : "Todas las solicitudes de impresión."}
                                 </p>
                                 <div className="flex gap-2">
@@ -143,8 +144,8 @@ export default function AyudantePage() {
                                         onClick={() => setFiltro(null)}
                                         className={`rounded-full border px-3 py-1 text-xs transition-colors ${
                                             !filtro
-                                                ? "border-cyan-500/30 bg-cyan-500/10 text-cyan-400"
-                                                : "border-[#1e2235] text-[#64748b] hover:border-cyan-500/30 hover:text-cyan-400"
+                                                ? "border-[#E94E77]/30 bg-[#E94E77]/10 text-[#E94E77]"
+                                                : "border-slate-200 bg-white text-slate-500 hover:border-[#E94E77]/40 hover:text-[#E94E77]"
                                         }`}
                                     >
                                         Todas
@@ -155,8 +156,8 @@ export default function AyudantePage() {
                                             onClick={() => setFiltro(e)}
                                             className={`rounded-full border px-3 py-1 text-xs transition-colors ${
                                                 filtro === e
-                                                    ? "border-cyan-500/30 bg-cyan-500/10 text-cyan-400"
-                                                    : "border-[#1e2235] text-[#64748b] hover:border-cyan-500/30 hover:text-cyan-400"
+                                                    ? "border-[#E94E77]/30 bg-[#E94E77]/10 text-[#E94E77]"
+                                                    : "border-slate-200 bg-white text-slate-500 hover:border-[#E94E77]/40 hover:text-[#E94E77]"
                                             }`}
                                         >
                                             {e.replace("_", " ")}
@@ -170,11 +171,11 @@ export default function AyudantePage() {
 
                     {tab === "sala" && (
                         <section>
-                            <p className="mb-6 text-sm text-[#64748b]">Disponibilidad de la sala para la semana.</p>
+                            <p className="mb-6 text-sm text-slate-500">Disponibilidad de la sala para la semana.</p>
                             <div className="grid grid-cols-5 gap-3">
                                 {["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"].map((dia, di) => (
-                                    <div key={dia} className="rounded-xl border border-[#1e2235] bg-[#151821] p-4">
-                                        <p className="mb-3 text-center text-xs font-medium uppercase tracking-wider text-[#64748b]">
+                                    <div key={dia} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_30px_rgba(107,63,160,0.05)]">
+                                        <p className="mb-3 text-center text-xs font-medium uppercase tracking-wider text-slate-500">
                                             {dia}
                                         </p>
                                         <div className="space-y-2">
@@ -183,10 +184,10 @@ export default function AyudantePage() {
                                                 .map((b, i) => (
                                                     <div
                                                         key={i}
-                                                        className={`rounded-lg px-3 py-2 text-center text-xs ${
+                                                        className={`rounded-lg border px-3 py-2 text-center text-xs ${
                                                             b.disponible
-                                                                ? "bg-green-500/10 text-green-400"
-                                                                : "bg-red-500/10 text-red-400"
+                                                                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                                                                : "border-rose-200 bg-rose-50 text-rose-600"
                                                         }`}
                                                     >
                                                         {b.hora}
@@ -202,13 +203,13 @@ export default function AyudantePage() {
                     {tab === "filamento" && (
                         <section>
                             <div className="mb-6 grid grid-cols-3 gap-4">
-                                <StatCard label="Filamento usado hoy" value="165g" />
-                                <StatCard label="Filamento usado esta semana" value="720g" />
-                                <StatCard label="Rollos activos" value="6" />
+                                <StatCard label="Filamento usado hoy" value="165g" accent="pink" />
+                                <StatCard label="Filamento usado esta semana" value="720g" accent="purple" />
+                                <StatCard label="Rollos activos" value="6" accent="blue" />
                             </div>
                             <div className="mb-4 flex items-center justify-between">
-                                <p className="text-sm text-[#64748b]">Registro de uso de filamento.</p>
-                                <button className="rounded-lg bg-cyan-500/10 px-4 py-2 text-sm font-medium text-cyan-400 transition-colors hover:bg-cyan-500/20">
+                                <p className="text-sm text-slate-500">Registro de uso de filamento.</p>
+                                <button className="rounded-lg bg-[#E94E77] px-4 py-2 text-sm font-medium text-white shadow-sm shadow-[#E94E77]/25 transition-colors hover:bg-[#d83d66]">
                                     + Registrar Uso
                                 </button>
                             </div>
@@ -217,15 +218,6 @@ export default function AyudantePage() {
                     )}
                 </div>
             </main>
-        </div>
-    )
-}
-
-function StatCard({ label, value }: { label: string; value: string }) {
-    return (
-        <div className="rounded-xl border border-[#1e2235] bg-[#151821] p-5">
-            <p className="text-xs font-medium uppercase tracking-wider text-[#64748b]">{label}</p>
-            <p className="mt-2 text-2xl font-bold text-[#e2e8f0]">{value}</p>
         </div>
     )
 }

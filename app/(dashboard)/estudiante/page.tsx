@@ -46,7 +46,7 @@ const colsSolicitudes: Column<Solicitud>[] = [
         key: "detalle",
         header: "",
         render: () => (
-            <button className="rounded-md border border-[#1e2235] px-2.5 py-1 text-xs text-[#64748b] transition-colors hover:border-cyan-500/30 hover:text-cyan-400">
+            <button className="rounded-md border border-slate-200 px-2.5 py-1 text-xs text-slate-500 transition-colors hover:border-[#6B3FA0]/40 hover:text-[#6B3FA0]">
                 Ver detalle
             </button>
         ),
@@ -63,11 +63,11 @@ const colsAyudantias: Column<Ayudantia>[] = [
         header: "",
         render: (a) =>
             a.cupos > 0 ? (
-                <button className="rounded-md bg-cyan-500/10 px-3 py-1.5 text-xs font-medium text-cyan-400 transition-colors hover:bg-cyan-500/20">
+                <button className="rounded-md bg-[#6B3FA0] px-3 py-1.5 text-xs font-medium text-white shadow-sm shadow-[#6B3FA0]/20 transition-colors hover:bg-[#5a3488]">
                     Inscribirse
                 </button>
             ) : (
-                <span className="text-xs text-red-400">Sin cupos</span>
+                <span className="text-xs text-rose-600">Sin cupos</span>
             ),
     },
 ]
@@ -80,11 +80,11 @@ export default function EstudiantePage() {
             <Sidebar rol="ESTUDIANTE" activeTab={tab} onTabChange={setTab} />
 
             <main className="flex-1 overflow-auto">
-                <header className="flex items-center justify-between border-b border-[#1e2235] px-8 py-5">
-                    <h1 className="text-lg font-semibold text-[#e2e8f0] capitalize">{tab}</h1>
-                    <div className="flex items-center gap-3 text-sm text-[#64748b]">
+                <header className="flex items-center justify-between border-b border-slate-200 bg-white/70 px-8 py-5 backdrop-blur-sm">
+                    <h1 className="text-lg font-semibold text-slate-900 capitalize">{tab}</h1>
+                    <div className="flex items-center gap-3 text-sm text-slate-500">
                         <span className="flex items-center gap-2">
-                            <span className="h-2 w-2 rounded-full bg-green-500" />
+                            <span className="h-2 w-2 rounded-full bg-emerald-500" />
                             Conectado
                         </span>
                     </div>
@@ -94,8 +94,8 @@ export default function EstudiantePage() {
                     {tab === "solicitudes" && (
                         <section>
                             <div className="mb-4 flex items-center justify-between">
-                                <p className="text-sm text-[#64748b]">Historial de tus solicitudes de impresión.</p>
-                                <button className="rounded-lg bg-cyan-500/10 px-4 py-2 text-sm font-medium text-cyan-400 transition-colors hover:bg-cyan-500/20">
+                                <p className="text-sm text-slate-500">Historial de tus solicitudes de impresión.</p>
+                                <button className="rounded-lg bg-[#6B3FA0] px-4 py-2 text-sm font-medium text-white shadow-sm shadow-[#6B3FA0]/20 transition-colors hover:bg-[#5a3488]">
                                     + Nueva Solicitud
                                 </button>
                             </div>
@@ -105,14 +105,14 @@ export default function EstudiantePage() {
 
                     {tab === "ayudantias" && (
                         <section>
-                            <p className="mb-4 text-sm text-[#64748b]">
+                            <p className="mb-4 text-sm text-slate-500">
                                 Ayudantías disponibles para inscripción.
                             </p>
                             <DataTable columns={colsAyudantias} data={ayudantias} />
 
-                            <div className="mt-6 flex items-center gap-3 rounded-xl border border-amber-500/20 bg-amber-500/5 px-5 py-4">
+                            <div className="mt-6 flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4">
                                 <span className="text-lg">📌</span>
-                                <p className="text-sm text-amber-400">
+                                <p className="text-sm text-amber-700">
                                     Puedes inscribirte en hasta 2 ayudantías por semestre.
                                 </p>
                             </div>
@@ -121,29 +121,29 @@ export default function EstudiantePage() {
 
                     {tab === "sala" && (
                         <section>
-                            <p className="mb-6 text-sm text-[#64748b]">
+                            <p className="mb-6 text-sm text-slate-500">
                                 Reserva un bloque en la sala interactiva para trabajar en tus proyectos.
                             </p>
-                            <div className="mx-auto max-w-lg rounded-xl border border-[#1e2235] bg-[#151821] p-6">
-                                <h3 className="mb-4 text-sm font-semibold text-[#e2e8f0]">
+                            <div className="mx-auto max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(107,63,160,0.06)]">
+                                <h3 className="mb-4 text-sm font-semibold text-slate-900">
                                     Nueva reserva
                                 </h3>
                                 <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
                                     <div>
-                                        <label className="mb-1.5 block text-xs font-medium text-[#64748b]">
+                                        <label className="mb-1.5 block text-xs font-medium text-slate-600">
                                             Fecha
                                         </label>
                                         <input
                                             type="date"
-                                            className="w-full rounded-lg border border-[#1e2235] bg-[#0f1119] px-3 py-2 text-sm text-[#e2e8f0] outline-none focus:border-cyan-500/50"
+                                            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-[#6B3FA0] focus:ring-4 focus:ring-[#6B3FA0]/15"
                                         />
                                     </div>
                                     <div className="grid grid-cols-2 gap-3">
                                         <div>
-                                            <label className="mb-1.5 block text-xs font-medium text-[#64748b]">
+                                            <label className="mb-1.5 block text-xs font-medium text-slate-600">
                                                 Desde
                                             </label>
-                                            <select className="w-full rounded-lg border border-[#1e2235] bg-[#0f1119] px-3 py-2 text-sm text-[#e2e8f0] outline-none focus:border-cyan-500/50">
+                                            <select className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-[#6B3FA0] focus:ring-4 focus:ring-[#6B3FA0]/15">
                                                 <option>09:00</option>
                                                 <option>10:00</option>
                                                 <option>11:00</option>
@@ -151,10 +151,10 @@ export default function EstudiantePage() {
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="mb-1.5 block text-xs font-medium text-[#64748b]">
+                                            <label className="mb-1.5 block text-xs font-medium text-slate-600">
                                                 Hasta
                                             </label>
-                                            <select className="w-full rounded-lg border border-[#1e2235] bg-[#0f1119] px-3 py-2 text-sm text-[#e2e8f0] outline-none focus:border-cyan-500/50">
+                                            <select className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-[#6B3FA0] focus:ring-4 focus:ring-[#6B3FA0]/15">
                                                 <option>10:00</option>
                                                 <option>11:00</option>
                                                 <option>12:00</option>
@@ -164,7 +164,7 @@ export default function EstudiantePage() {
                                     </div>
                                     <button
                                         type="submit"
-                                        className="w-full rounded-lg bg-cyan-500/10 py-2.5 text-sm font-medium text-cyan-400 transition-colors hover:bg-cyan-500/20"
+                                        className="w-full rounded-lg bg-[#6B3FA0] py-2.5 text-sm font-medium text-white shadow-sm shadow-[#6B3FA0]/20 transition-colors hover:bg-[#5a3488]"
                                     >
                                         Solicitar Reserva
                                     </button>
