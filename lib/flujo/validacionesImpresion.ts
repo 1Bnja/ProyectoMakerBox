@@ -23,11 +23,9 @@ export function validarDatosImpresion(solicitud: DatosSolicitud) {
 
 }
 
-// Al final de lib/flujo/validacionesImpresion.ts
 
-/**
- * Lee el Buffer de un archivo STL binario y calcula su volumen aproximado en cm³
- */
+
+
 export function calcularVolumenSTL(buffer: ArrayBuffer): number {
   const view = new DataView(buffer);
   
@@ -35,21 +33,21 @@ export function calcularVolumenSTL(buffer: ArrayBuffer): number {
   // Los siguientes 4 bytes (offset 80) indican el número total de triángulos.
   if (buffer.byteLength < 84) return 0;
   
-  const numTriangulos = view.getUint32(80, true); // true para leer en Little Endian
+  const numTriangulos = view.getUint32(80, true); 
   
   let volumenTotal = 0;
   let offset = 84; // El primer triángulo empieza en el byte 84
 
-  // Cada triángulo ocupa exactamente 50 bytes:
-  // - 12 bytes: Vector normal (3 floats)
-  // - 12 bytes: Vértice 1 (3 floats)
-  // - 12 bytes: Vértice 2 (3 floats)
-  // - 12 bytes: Vértice 3 (3 floats)
-  // - 2 bytes: Atributo de control
+  //Cada triángulo ocupa exactamente 50 bytes:
+  //12 bytes: Vector normal (3 floats)
+  //12 bytes: Vértice 1 (3 floats)
+  //12 bytes: Vértice 2 (3 floats)
+  //12 bytes: Vértice 3 (3 floats)
+  //2 bytes: Atributo de control
   for (let i = 0; i < numTriangulos; i++) {
     if (offset + 50 > buffer.byteLength) break;
 
-    // Saltamos la normal (12 bytes) e ir directo a los vértices
+    
     const v1x = view.getFloat32(offset + 12, true);
     const v1y = view.getFloat32(offset + 16, true);
     const v1z = view.getFloat32(offset + 20, true);
@@ -74,11 +72,11 @@ export function calcularVolumenSTL(buffer: ArrayBuffer): number {
     const volumenTetraedro = (v310 + v210 + v120 + v110 + v220 + v330) / 6.0;
     volumenTotal += volumenTetraedro;
 
-    offset += 50; // Avanzamos al siguiente triángulo
+    offset += 50; 
   }
 
   // El volumen calculado está en mm³ (unidad estándar de diseño 3D).
-  // Dividimos por 1000 para transformarlo a cm³ reales.
+  // Dividir por 1000 para transformarlo a cm³ reales.
   const volumenCm3 = Math.abs(volumenTotal) / 1000.0;
   return parseFloat(volumenCm3.toFixed(2));
 }

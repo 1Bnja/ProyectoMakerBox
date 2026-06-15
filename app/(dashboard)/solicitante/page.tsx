@@ -26,6 +26,7 @@ export default function SolicitantePage() {
     setDatos((prev) => ({ ...prev, [name]: value }))
   }
 
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   const handleFileChange = async (e: ChangeEvent<HTMLInputElement>): Promise<void> => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -81,7 +82,6 @@ export default function SolicitantePage() {
   };
 
   // Enviar la solicitud al sistema
-  /* eslint-disable @typescript-eslint/no-explicit-any */
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     if (!archivo) {
@@ -93,7 +93,7 @@ export default function SolicitantePage() {
     setMensaje(null)
 
     try {
-      //Subir el archivo al Storage de Supabase
+      // Subir el archivo al Storage de Supabase
       const fileExt = archivo.name.split('.').pop()
       const fileName = `${Math.random()}.${fileExt}`
       const filePath = `modelos/${fileName}`
@@ -104,33 +104,33 @@ export default function SolicitantePage() {
 
       if (uploadError) throw new Error(`Error al subir archivo: ${uploadError.message}`)
 
-      //Obtener el ID del usuario actual logueado
+      // Obtener el ID del usuario actual logueado
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('No se encontró una sesión de usuario activa.')
 
-      //Insertar metadatos de la solicitud en la tabla 'impresiones'
-       /* eslint-disable @typescript-eslint/naming-convention */
-        const solicitudDatos = {
-          user_id: user.id,
-          tipo: 'PERSONAL',      
-          estado: 'PENDIENTE',    
-          stl_path: filePath,             
-          comentario: `Proyecto: ${datos.nombre}. Descripción: ${datos.descripcion}. Notas: ${datos.comentarios}`,
-          created_at: new Date().toISOString(),
-          curso_id: null,
-          grupo_id: null,
-          ayudante_id: null
-        };
-        /* eslint-enable @typescript-eslint/naming-convention */
+      /* eslint-disable @typescript-eslint/naming-convention */
+      const solicitudDatos = {
+        user_id: user.id,
+        tipo: 'PERSONAL',      
+        estado: 'PENDIENTE',    
+        stl_path: filePath,             
+        comentario: `Proyecto: ${datos.nombre}. Descripción: ${datos.descripcion}. Notas: ${datos.comentarios}`,
+        created_at: new Date().toISOString(),
+        curso_id: null,
+        grupo_id: null,
+        ayudante_id: null
+      };
+      /* eslint-enable @typescript-eslint/naming-convention */
 
+    
       const { error: insertError } = await supabase
         .from('impresiones') 
-        .insert([solicitudDatos] as any)
+        .insert([solicitudDatos] as never[])
 
       if (insertError) throw insertError
+      
 
       setMensaje({ tipo: 'exito', texto: '¡Solicitud creada exitosamente en el sistema!' })
-      // Limpiar formulario
       setDatos({ nombre: '', descripcion: '', comentarios: '' })
       setArchivo(null)
     } catch (error: any) {
@@ -138,8 +138,8 @@ export default function SolicitantePage() {
     } finally {
       setCargando(false)
     }
-    }
-    /* eslint-enable @typescript-eslint/no-explicit-any */
+  }
+  /* eslint-enable @typescript-eslint/no-explicit-any */
 
   return (
     <div style={{ maxWidth: '600px', margin: '40px auto', padding: '20px', fontFamily: 'Arial, sans-serif', backgroundColor: '#ffffff', borderRadius: '8px', boxShadow: '0 2px 8px rgb(118, 4, 143)' }}>
@@ -192,44 +192,43 @@ export default function SolicitantePage() {
           />
         </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <span style={{ fontWeight: 'bold', color: '#aa11c2' }}>Modelo 3D (Formatos admitidos: .stl, .obj) *</span>
-            
-            <input
-              type="file"
-              id="archivo"
-              accept=".stl,.obj"
-              onChange={handleFileChange}
-              style={{ display: 'none' }}
-            />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <span style={{ fontWeight: 'bold', color: '#aa11c2' }}>Modelo 3D (Formatos admitidos: .stl, .obj) *</span>
+          
+          <input
+            type="file"
+            id="archivo"
+            accept=".stl,.obj"
+            onChange={handleFileChange}
+            style={{ display: 'none' }}
+          />
 
-            <label
-              htmlFor="archivo"
-              style={{
-                display: 'block',
-                padding: '24px 16px',
-                border: '2px dashed #cbd5e0',
-                borderRadius: '6px',
-                backgroundColor: '#f7fafc',
-                textAlign: 'center',
-                cursor: 'pointer',
-                color: '#4a5568',
-                fontSize: '14px',
-                transition: 'all 0.2s ease-in-out',
-              }}
-              
-              onMouseOver={(e) => {
-                e.currentTarget.style.borderColor = '#aa11c2'
-                e.currentTarget.style.backgroundColor = '#fdf4ff'
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.borderColor = '#cbd5e0'
-                e.currentTarget.style.backgroundColor = '#f7fafc'
-              }}
-            >
-              {archivo ? `Archivo seleccionado: ${archivo.name}` : 'Haz click aquí para buscar tu archivo 3D'}
-            </label>
-          </div>
+          <label
+            htmlFor="archivo"
+            style={{
+              display: 'block',
+              padding: '24px 16px',
+              border: '2px dashed #cbd5e0',
+              borderRadius: '6px',
+              backgroundColor: '#f7fafc',
+              textAlign: 'center',
+              cursor: 'pointer',
+              color: '#4a5568',
+              fontSize: '14px',
+              transition: 'all 0.2s ease-in-out',
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.borderColor = '#aa11c2'
+              e.currentTarget.style.backgroundColor = '#fdf4ff'
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.borderColor = '#cbd5e0'
+              e.currentTarget.style.backgroundColor = '#f7fafc'
+            }}
+          >
+            {archivo ? `Archivo seleccionado: ${archivo.name}` : 'Haz click aquí para buscar tu archivo 3D'}
+          </label>
+        </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
           <label htmlFor="comentarios" style={{ fontWeight: 'bold', color: '#aa11c2' }}>Comentarios adicionales</label>
