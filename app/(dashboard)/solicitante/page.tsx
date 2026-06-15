@@ -104,31 +104,19 @@ export default function SolicitantePage() {
 
       if (uploadError) throw new Error(`Error al subir archivo: ${uploadError.message}`)
 
-      // Obtener el ID del usuario actual logueado
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('No se encontró una sesión de usuario activa.')
+      const comentario = `Proyecto: ${datos.nombre}. Descripción: ${datos.descripcion}. Notas: ${datos.comentarios}`
 
       /* eslint-disable @typescript-eslint/naming-convention */
-      const solicitudDatos = {
-        user_id: user.id,
-        tipo: 'PERSONAL',      
-        estado: 'PENDIENTE',    
-        stl_path: filePath,             
-        comentario: `Proyecto: ${datos.nombre}. Descripción: ${datos.descripcion}. Notas: ${datos.comentarios}`,
-        created_at: new Date().toISOString(),
-        curso_id: null,
-        grupo_id: null,
-        ayudante_id: null
-      };
+      const res = await fetch("/api/solicitudes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stl_path: filePath, comentario }),
+      })
       /* eslint-enable @typescript-eslint/naming-convention */
 
-    
-      const { error: insertError } = await supabase
-        .from('impresiones') 
-        .insert([solicitudDatos] as never[])
+      const data = await res.json()
 
-      if (insertError) throw insertError
-      
+      if (!res.ok) throw new Error(data.error || "Error al crear la solicitud")
 
       setMensaje({ tipo: 'exito', texto: '¡Solicitud creada exitosamente en el sistema!' })
       setDatos({ nombre: '', descripcion: '', comentarios: '' })

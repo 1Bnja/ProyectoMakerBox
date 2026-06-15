@@ -1,63 +1,44 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from "vitest"
+import { login } from "@/lib/auth/login"
 
-vi.mock('@/lib/supabase/auth', () => ({
-  signInWithEmail: vi.fn(),
-}))
-
-vi.mock('@/lib/supabase/perfiles', () => ({
-  getPerfil: vi.fn(),
-}))
-
-import { signInWithEmail } from '@/lib/supabase/auth'
-import { getPerfil } from '@/lib/supabase/perfiles'
-import { login } from '@/lib/auth/login'
-
-describe('AUTH-01 - login()', () => {
+describe("AUTH-01 - login()", () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
-  it('retorna error si las credenciales son inválidas', async () => {
-    vi.mocked(signInWithEmail).mockResolvedValue({
-      data: { user: null, session: null },
-      error: { message: 'Invalid login credentials' },
-    } as never)
+  it("retorna error si las credenciales son inválidas", async () => {
+    vi.spyOn(global, "fetch").mockResolvedValueOnce({
+      ok: false,
+      status: 401,
+      json: async () => ({ error: "Invalid login credentials" }),
+    } as Response)
 
-    const resultado = await login('usuario@ejemplo.com', 'malacontrasena')
+    const resultado = await login("usuario@ejemplo.com", "malacontrasena")
 
-    expect(resultado).toEqual({ error: 'Invalid login credentials' })
-    expect(getPerfil).not.toHaveBeenCalled()
+    expect(resultado).toEqual({ error: "Invalid login credentials" })
   })
 
-  it('retorna error si no se encuentra el perfil del usuario', async () => {
-    vi.mocked(signInWithEmail).mockResolvedValue({
-      data: { user: { id: 'user-123' }, session: {} },
-      error: null,
-    } as never)
+  it("retorna error si no se encuentra el perfil del usuario", async () => {
+    vi.spyOn(global, "fetch").mockResolvedValueOnce({
+      ok: false,
+      status: 404,
+      json: async () => ({ error: "No rows found" }),
+    } as Response)
 
-    vi.mocked(getPerfil).mockResolvedValue({
-      data: null,
-      error: { message: 'No rows found' },
-    } as never)
+    const resultado = await login("usuario@ejemplo.com", "contrasena123")
 
-    const resultado = await login('usuario@ejemplo.com', 'contrasena123')
-
-    expect(resultado).toEqual({ error: 'No rows found' })
+    expect(resultado).toEqual({ error: "No rows found" })
   })
 
-  it('retorna el rol del usuario cuando el login es exitoso', async () => {
-    vi.mocked(signInWithEmail).mockResolvedValue({
-      data: { user: { id: 'user-123' }, session: {} },
-      error: null,
-    } as never)
+  it("retorna el rol del usuario cuando el login es exitoso", async () => {
+    vi.spyOn(global, "fetch").mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({ rol: "ESTUDIANTE" }),
+    } as Response)
 
-    vi.mocked(getPerfil).mockResolvedValue({
-      data: { id: 'user-123', nombre: 'Ana', apellido: 'Pérez', rol: 'ESTUDIANTE' },
-      error: null,
-    } as never)
+    const resultado = await login("usuario@ejemplo.com", "contrasena123")
 
-    const resultado = await login('usuario@ejemplo.com', 'contrasena123')
-
-    expect(resultado).toEqual({ rol: 'ESTUDIANTE' })
+    expect(resultado).toEqual({ rol: "ESTUDIANTE" })
   })
 })
