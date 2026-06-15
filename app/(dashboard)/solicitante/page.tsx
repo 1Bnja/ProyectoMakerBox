@@ -39,6 +39,8 @@ export default function SolicitantePage() {
       
       // Evento que se ejecuta cuando el navegador termina de leer el archivo binario
       reader.onload = (event: ProgressEvent<FileReader>) => {
+        const target = event.target;
+        if (!target) return;
         const buffer = event.target?.result as ArrayBuffer;
         let volumenCalculado = 0;
 
@@ -105,17 +107,19 @@ export default function SolicitantePage() {
       if (!user) throw new Error('No se encontró una sesión de usuario activa.')
 
       //Insertar metadatos de la solicitud en la tabla 'impresiones'
-       const solicitudDatos = {
-        'user_id': user.id,
-        'tipo': 'PERSONAL',   
-        'estado': 'PENDIENTE', 
-        'stl_path': filePath,             
-        'comentario': `Proyecto: ${datos.nombre}. Descripción: ${datos.descripcion}. Notas: ${datos.comentarios}`,
-        'created_at': new Date().toISOString(),
-        'curso_id': null,
-        'grupo_id': null,
-        'ayudante_id': null
-      }
+       /* eslint-disable naming-convention */
+        const solicitudDatos = {
+          user_id: user.id,
+          tipo: 'PERSONAL',      
+          estado: 'PENDIENTE',    
+          stl_path: filePath,             
+          comentario: `Proyecto: ${datos.nombre}. Descripción: ${datos.descripcion}. Notas: ${datos.comentarios}`,
+          created_at: new Date().toISOString(),
+          curso_id: null,
+          grupo_id: null,
+          ayudante_id: null
+        };
+        /* eslint-enable naming-convention */
 
       const { error: insertError } = await supabase
         .from('impresiones') 
