@@ -27,59 +27,60 @@ export default function SolicitantePage() {
     setDatos((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
+  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>): Promise<void> => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    
+    const file = files[0];
+    if (!file) return;
+    
+    setMensaje(null);
+
+    const { calcularVolumenSTL: extractorVolumen } = await import('@/lib/flujo/validacionesImpresion');
+
+    const reader = new FileReader();
+    
+    reader.onload = (event: ProgressEvent<FileReader>): void => {
+      const target = event.target;
+      if (!target) return;
+      
+      const buffer = target.result as ArrayBuffer;
+      if (!buffer) return;
+
+      let volumenCalculado = 0;
+
+      if (file.name.toLowerCase().endsWith('.stl')) {
+        volumenCalculado = extractorVolumen(buffer);
+      } else {
+        volumenCalculado = 10; 
+      }
+
+      const datosSolicitudParaValidar = {
+        nombreArchivo: file.name,
+        material: 'PLA',
+        volumenCm3: volumenCalculado,
+      };
+
+      const validacion = validarDatosImpresion(datosSolicitudParaValidar);
+
+      if (!validacion.valido) {
+        setMensaje({ tipo: 'error', texto: validacion.error || 'Archivo no válido.' });
+        setArchivo(null);
+        e.target.value = ''; 
+        return;
+      }
+
       setMensaje(null);
+      setArchivo(file);
+    };
 
-      
-      const { calcularVolumenSTL: extractorVolumen } = await import('@/lib/flujo/validacionesImpresion');
+    reader.onerror = (): void => {
+      setMensaje({ tipo: 'error', texto: 'Error al leer el contenido binario del archivo.' });
+    };
 
-      const reader = new FileReader();
-      
-      
-      reader.onload = (event: ProgressEvent<FileReader>): void => {
-        if (!event.target) return;
-        
-      const buffer = event.target.result as ArrayBuffer;
-        if (!buffer) return;
-
-        let volumenCalculado = 0;
-
-        if (file.name.toLowerCase().endsWith('.stl')) {
-          volumenCalculado = extractorVolumen(buffer);
-        } else {
-          volumenCalculado = 10; 
-        }
-
-        const datosSolicitudParaValidar = {
-          nombreArchivo: file.name,
-          material: 'PLA',
-          volumenCm3: volumenCalculado,
-        };
-
-        const validacion = validarDatosImpresion(datosSolicitudParaValidar);
-
-        if (!validacion.valido) {
-          setMensaje({ tipo: 'error', texto: validacion.error || 'Archivo no válido.' });
-          setArchivo(null);
-          e.target.value = ''; 
-          return;
-        }
-
-        setMensaje(null);
-        setArchivo(file);
-      };
-
-      
-      reader.onerror = (): void => {
-        setMensaje({ tipo: 'error', texto: 'Error al leer el contenido binario del archivo.' });
-      };
-
-      reader.readAsArrayBuffer(file);
-    }
+    reader.readAsArrayBuffer(file);
   };
-
+  
   // Enviar la solicitud al sistema
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
