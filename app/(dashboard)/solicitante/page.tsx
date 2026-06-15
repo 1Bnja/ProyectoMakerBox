@@ -37,20 +37,21 @@ export default function SolicitantePage() {
 
       const reader = new FileReader();
       
-      // Evento que se ejecuta cuando el navegador termina de leer el archivo binario
-      reader.onload = (event: ProgressEvent<FileReader>) => {
-        const target = event.target;
-        if (!target) return;
-        const buffer = event.target?.result as ArrayBuffer;
+      
+      reader.onload = (event: ProgressEvent<FileReader>): void => {
+        if (!event.target) return;
+        
+      const buffer = event.target.result as ArrayBuffer;
+        if (!buffer) return;
+
         let volumenCalculado = 0;
 
-        if (file.name.toLowerCase().endsWith('.stl') && buffer) {
+        if (file.name.toLowerCase().endsWith('.stl')) {
           volumenCalculado = extractorVolumen(buffer);
         } else {
           volumenCalculado = 10; 
         }
 
-        // Construir el objeto con el volumen real para el validador original
         const datosSolicitudParaValidar = {
           nombreArchivo: file.name,
           material: 'PLA',
@@ -62,16 +63,16 @@ export default function SolicitantePage() {
         if (!validacion.valido) {
           setMensaje({ tipo: 'error', texto: validacion.error || 'Archivo no válido.' });
           setArchivo(null);
-          e.target.value = '';
+          e.target.value = ''; 
           return;
         }
 
         setMensaje(null);
         setArchivo(file);
-        
       };
 
-      reader.onerror = () => {
+      
+      reader.onerror = (): void => {
         setMensaje({ tipo: 'error', texto: 'Error al leer el contenido binario del archivo.' });
       };
 
@@ -107,7 +108,7 @@ export default function SolicitantePage() {
       if (!user) throw new Error('No se encontró una sesión de usuario activa.')
 
       //Insertar metadatos de la solicitud en la tabla 'impresiones'
-       /* eslint-disable naming-convention */
+       /* eslint-disable @typescript-eslint/naming-convention */
         const solicitudDatos = {
           user_id: user.id,
           tipo: 'PERSONAL',      
@@ -119,7 +120,7 @@ export default function SolicitantePage() {
           grupo_id: null,
           ayudante_id: null
         };
-        /* eslint-enable naming-convention */
+        /* eslint-enable @typescript-eslint/naming-convention */
 
       const { error: insertError } = await supabase
         .from('impresiones') 
