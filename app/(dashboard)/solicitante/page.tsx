@@ -75,10 +75,7 @@ export default function SolicitantePage() {
         setDatos((prev) => ({ ...prev, [name]: value }))
     }
 
-    /* eslint-disable @typescript-eslint/no-explicit-any */
-    const handleFileChange = async (
-        e: ChangeEvent<HTMLInputElement>
-    ): Promise<void> => {
+    const handleFileChange = async (e: ChangeEvent<HTMLInputElement>): Promise<void> => {
         const files = e.target.files
         if (!files || files.length === 0) return
 
@@ -87,45 +84,26 @@ export default function SolicitantePage() {
 
         setMensaje(null)
 
-        const { calcularVolumenSTL: extractorVolumen } = await import(
-            "@/lib/flujo/validacionesImpresion"
-        )
+        const { calcularVolumenSTL } = await import("@/lib/flujo/validacionesImpresion")
 
         const reader = new FileReader()
 
-        reader.onload = (
-            event: ProgressEvent<FileReader>
-        ): void => {
-            const target = event.target
-            if (!target) return
-
-            const buffer = target.result as ArrayBuffer
+        reader.onload = (event: ProgressEvent<FileReader>): void => {
+            const buffer = event.target?.result as ArrayBuffer
             if (!buffer) return
 
-            let volumenCalculado = 0
+            const volumenCalculado = file.name.toLowerCase().endsWith(".stl")
+                ? calcularVolumenSTL(buffer)
+                : 10
 
-            if (file.name.toLowerCase().endsWith(".stl")) {
-                volumenCalculado = extractorVolumen(buffer)
-            } else {
-                volumenCalculado = 10
-            }
-
-            const datosSolicitudParaValidar = {
+            const validacion = validarDatosImpresion({
                 nombreArchivo: file.name,
                 material: "PLA",
                 volumenCm3: volumenCalculado,
-            }
-
-            const validacion = validarDatosImpresion(
-                datosSolicitudParaValidar
-            )
+            })
 
             if (!validacion.valido) {
-                setMensaje({
-                    tipo: "error",
-                    texto:
-                        validacion.error || "Archivo no válido.",
-                })
+                setMensaje({ tipo: "error", texto: validacion.error ?? "Archivo no válido." })
                 setArchivo(null)
                 e.target.value = ""
                 return
@@ -136,10 +114,7 @@ export default function SolicitantePage() {
         }
 
         reader.onerror = (): void => {
-            setMensaje({
-                tipo: "error",
-                texto: "Error al leer el contenido binario del archivo.",
-            })
+            setMensaje({ tipo: "error", texto: "Error al leer el contenido binario del archivo." })
         }
 
         reader.readAsArrayBuffer(file)
@@ -195,18 +170,13 @@ export default function SolicitantePage() {
             })
             setDatos({ nombre: "", descripcion: "", comentarios: "" })
             setArchivo(null)
-        } catch (error: any) {
-            setMensaje({
-                tipo: "error",
-                texto:
-                    error.message ||
-                    "Hubo un problema al procesar la solicitud.",
-            })
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "Hubo un problema al procesar la solicitud."
+            setMensaje({ tipo: "error", texto: message })
         } finally {
             setCargando(false)
         }
     }
-    /* eslint-enable @typescript-eslint/no-explicit-any */
 
     /* ---------- render ---------- */
 

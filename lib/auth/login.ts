@@ -1,16 +1,24 @@
-import { signInWithEmail } from '@/lib/supabase/auth'
-import { getPerfil } from '@/lib/supabase/perfiles'
-import type { Rol } from '@/lib/auth/roles'
+import type { Rol } from "@/lib/auth/roles"
+
+interface LoginResponse {
+    error?: string
+    rol?: Rol
+}
 
 export async function login(email: string, password: string) {
-    const { data, error } = await signInWithEmail(email, password)
+    /* eslint-disable @typescript-eslint/naming-convention */
+    const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+    })
+    /* eslint-enable @typescript-eslint/naming-convention */
 
-    if (error) {
-        return { error: error.message }
+    const data: LoginResponse = await res.json()
+
+    if (!res.ok) {
+        return { error: data.error ?? "Error al iniciar sesión" }
     }
-    const { data: perfil, error: perfilError } = await getPerfil(data.user.id)
-    if (perfilError) {
-        return { error: perfilError.message }
-    }
-    return { rol: (perfil as { rol: Rol }).rol }
+
+    return { rol: data.rol as Rol }
 }
