@@ -12,6 +12,14 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* MakerBox brand palette — shared across landing, login y dashboards */
+@theme {
+  --color-brand-purple: #6b3fa0;
+  --color-brand-pink: #e94e77;
+  --color-brand-blue: #3ab0ff;
+  --color-brand-ink: #1f2937;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
