@@ -75,8 +75,49 @@ export default function SolicitantePage() {
         setDatos((prev) => ({ ...prev, [name]: value }))
     }
 
-    const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-        setArchivo(e.target.files?.[0] ?? null)
+    const handleFileChange = async (e: ChangeEvent<HTMLInputElement>): Promise<void> => {
+        const files = e.target.files
+        if (!files || files.length === 0) return
+
+        const file = files[0]
+        if (!file) return
+
+        setMensaje(null)
+
+        const { calcularVolumenSTL } = await import("@/lib/flujo/validacionesImpresion")
+
+        const reader = new FileReader()
+
+        reader.onload = (event: ProgressEvent<FileReader>): void => {
+            const buffer = event.target?.result as ArrayBuffer
+            if (!buffer) return
+
+            const volumenCalculado = file.name.toLowerCase().endsWith(".stl")
+                ? calcularVolumenSTL(buffer)
+                : 10
+
+            const validacion = validarDatosImpresion({
+                nombreArchivo: file.name,
+                material: "PLA",
+                volumenCm3: volumenCalculado,
+            })
+
+            if (!validacion.valido) {
+                setMensaje({ tipo: "error", texto: validacion.error ?? "Archivo no válido." })
+                setArchivo(null)
+                e.target.value = ""
+                return
+            }
+
+            setMensaje(null)
+            setArchivo(file)
+        }
+
+        reader.onerror = (): void => {
+            setMensaje({ tipo: "error", texto: "Error al leer el contenido binario del archivo." })
+        }
+
+        reader.readAsArrayBuffer(file)
     }
 
     const handleSubmit = async (e: FormEvent) => {
@@ -129,18 +170,13 @@ export default function SolicitantePage() {
             })
             setDatos({ nombre: "", descripcion: "", comentarios: "" })
             setArchivo(null)
-        } catch (error: any) {
-            setMensaje({
-                tipo: "error",
-                texto:
-                    error.message ||
-                    "Hubo un problema al procesar la solicitud.",
-            })
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "Hubo un problema al procesar la solicitud."
+            setMensaje({ tipo: "error", texto: message })
         } finally {
             setCargando(false)
         }
     }
-    /* eslint-enable @typescript-eslint/no-explicit-any */
 
     /* ---------- render ---------- */
 

@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest'
 import {
   cambiarEstado,
   puedeTransicionar,
-  type EstadoSolicitud,
 } from '@/lib/flujo/estadoSolicitud'
 
 describe('F3 - Máquina de estados del flujo de impresión', () => {
@@ -48,4 +47,3 @@ describe('F3 - Máquina de estados del flujo de impresión', () => {
   })
 })
 
-const _tipado: EstadoSolicitud | null = null
