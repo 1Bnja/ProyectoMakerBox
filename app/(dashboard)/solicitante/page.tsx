@@ -75,42 +75,8 @@ export default function SolicitantePage() {
         setDatos((prev) => ({ ...prev, [name]: value }))
     }
 
-    setCargando(true)
-    setMensaje(null)
-
-    try {
-      // Subir el archivo al Storage de Supabase
-      const fileExt = archivo.name.split('.').pop()
-      const fileName = `${Math.random()}.${fileExt}`
-      const filePath = `modelos/${fileName}`
-
-      const { error: uploadError } = await supabase.storage
-        .from('solicitudes-impresion')
-        .upload(filePath, archivo)
-
-      if (uploadError) throw new Error(`Error al subir archivo: ${uploadError.message}`)
-
-      const comentario = `Proyecto: ${datos.nombre}. Descripción: ${datos.descripcion}. Notas: ${datos.comentarios}`
-
-      /* eslint-disable @typescript-eslint/naming-convention */
-      const res = await fetch("/api/solicitudes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ stl_path: filePath, comentario }),
-      })
-      /* eslint-enable @typescript-eslint/naming-convention */
-
-      const data = await res.json()
-
-      if (!res.ok) throw new Error(data.error || "Error al crear la solicitud")
-
-      setMensaje({ tipo: 'exito', texto: '¡Solicitud creada exitosamente en el sistema!' })
-      setDatos({ nombre: '', descripcion: '', comentarios: '' })
-      setArchivo(null)
-    } catch (error: any) {
-      setMensaje({ tipo: 'error', texto: error.message || 'Hubo un problema al procesar la solicitud.' })
-    } finally {
-      setCargando(false)
+    const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+        setArchivo(e.target.files?.[0] ?? null)
     }
 
     const handleSubmit = async (e: FormEvent) => {
