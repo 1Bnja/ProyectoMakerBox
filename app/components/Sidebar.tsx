@@ -21,6 +21,7 @@ const items: Record<Rol, MenuItem[]> = {
     ],
     AYUDANTE: [
         { id: "solicitudes", label: "Solicitudes", icon: <FileSvg /> },
+        { id: "estudiantes", label: "Estudiantes", icon: <UsersSvg /> },
         { id: "sala", label: "Disponibilidad Sala", icon: <CalendarSvg /> },
         { id: "filamento", label: "Registro Filamento", icon: <DropletSvg /> },
     ],

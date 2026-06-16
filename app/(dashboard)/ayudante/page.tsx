@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Sidebar } from "@/app/components/Sidebar"
 import { StatusBadge } from "@/app/components/StatusBadge"
 import { StatCard } from "@/app/components/StatCard"
@@ -27,6 +27,22 @@ interface Bloque {
     dia: string
     hora: string
     disponible: boolean
+}
+
+interface Estudiante {
+    id: string
+    nombre: string
+    apellido: string
+    email: string
+    activo: boolean
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    curso_id: string | null
+    cursos: { nombre: string } | null
+}
+
+interface Curso {
+    id: string
+    nombre: string
 }
 
 const horarios: Bloque[] = [
@@ -82,6 +98,130 @@ export default function AyudantePage() {
         { id: "S-005", nombre: "Soporte Teléfono", solicitante: "Camila Rojas", tipo: "Personal", estado: "PENDIENTE", fecha: "2026-06-10", prioridad: "Media" },
         { id: "S-006", nombre: "Base Laptop", solicitante: "Lukas Avello", tipo: "Curso", estado: "PENDIENTE", fecha: "2026-06-09", prioridad: "Alta" },
     ])
+
+    const [estudiantes, setEstudiantes] = useState<Estudiante[]>([])
+    const [cursos, setCursos] = useState<Curso[]>([])
+    const [estudiantesLoading, setEstudiantesLoading] = useState(true)
+    const [modal, setModal] = useState<"crear" | null>(null)
+    const [formNombre, setFormNombre] = useState("")
+    const [formApellido, setFormApellido] = useState("")
+    const [formEmail, setFormEmail] = useState("")
+    const [formPassword, setFormPassword] = useState("")
+    const [formCursoId, setFormCursoId] = useState("")
+    const [formError, setFormError] = useState("")
+    const [formSubmitting, setFormSubmitting] = useState(false)
+
+    async function cargarEstudiantes() {
+        const res = await fetch("/api/estudiantes")
+        if (res.ok) {
+            const data = await res.json()
+            setEstudiantes(data)
+        }
+        setEstudiantesLoading(false)
+    }
+
+    async function cargarCursos() {
+        const res = await fetch("/api/cursos")
+        if (res.ok) {
+            const data = await res.json()
+            setCursos(data)
+        }
+    }
+
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        cargarEstudiantes()
+        cargarCursos()
+    }, [])
+
+    async function handleCrearEstudiante(event: React.FormEvent) {
+        event.preventDefault()
+        setFormError("")
+        setFormSubmitting(true)
+
+        const res = await fetch("/api/estudiantes", {
+            method: "POST",
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                nombre: formNombre,
+                apellido: formApellido,
+                email: formEmail,
+                password: formPassword,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                curso_id: formCursoId || null,
+            }),
+        })
+
+        const data = await res.json()
+
+        if (!res.ok) {
+            setFormError(data.error)
+            setFormSubmitting(false)
+            return
+        }
+
+        setFormNombre("")
+        setFormApellido("")
+        setFormEmail("")
+        setFormPassword("")
+        setFormCursoId("")
+        setFormSubmitting(false)
+        setModal(null)
+        cargarEstudiantes()
+    }
+
+    async function handleToggleActivo(estudiante: Estudiante) {
+        const res = await fetch(`/api/estudiantes/${estudiante.id}`, {
+            method: "PATCH",
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ activo: !estudiante.activo }),
+        })
+
+        if (res.ok) {
+            cargarEstudiantes()
+        }
+    }
+
+    const colsEstudiantes: Column<Estudiante>[] = [
+        {
+            key: "nombre",
+            header: "Nombre",
+            render: (e) => `${e.nombre} ${e.apellido}`,
+        },
+        { key: "email", header: "Email" },
+        {
+            key: "curso",
+            header: "Curso",
+            render: (e) => e.cursos?.nombre ?? "—",
+        },
+        {
+            key: "estado",
+            header: "Estado",
+            render: (e) => (
+                <StatusBadge status={e.activo ? "Activo" : "Inactivo"} />
+            ),
+        },
+        {
+            key: "acciones",
+            header: "",
+            render: (e) => (
+                <div className="flex gap-2">
+                    <button
+                        onClick={() => handleToggleActivo(e)}
+                        className={`rounded-md border px-2.5 py-1 text-xs transition-colors ${
+                            e.activo
+                                ? "border-rose-200 text-rose-600 hover:bg-rose-50"
+                                : "border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                        }`}
+                    >
+                        {e.activo ? "Retirar" : "Reactivar"}
+                    </button>
+                </div>
+            ),
+        },
+    ]
 
     const colsSolicitudes: Column<Solicitud>[] = [
         { key: "id", header: "ID" },
@@ -140,7 +280,8 @@ export default function AyudantePage() {
                                     )
 
                                     setComentariosRechazo((actuales) => {
-                                        const { [s.id]: _, ...resto } = actuales
+                                        const resto = { ...actuales }
+                                        delete resto[s.id]
                                         return resto
                                     })
                                 }}
@@ -180,6 +321,7 @@ export default function AyudantePage() {
         : solicitudes
 
     return (
+        <>
         <div className="flex w-full">
             <Sidebar rol="AYUDANTE" activeTab={tab} onTabChange={setTab} />
 
@@ -237,6 +379,30 @@ export default function AyudantePage() {
                         </section>
                     )}
 
+                    {tab === "estudiantes" && (
+                        <section>
+                            <div className="mb-4 flex items-center justify-between">
+                                <p className="text-sm text-slate-500">
+                                    Estudiantes registrados en el sistema.
+                                </p>
+                                <button
+                                    onClick={() => setModal("crear")}
+                                    className="rounded-lg bg-[#E94E77] px-4 py-2 text-sm font-medium text-white shadow-sm shadow-[#E94E77]/25 transition-colors hover:bg-[#d83d66]"
+                                >
+                                    + Nuevo Estudiante
+                                </button>
+                            </div>
+
+                            {estudiantesLoading ? (
+                                <div className="flex items-center justify-center py-16 text-sm text-slate-500">
+                                    Cargando estudiantes...
+                                </div>
+                            ) : (
+                                <DataTable columns={colsEstudiantes} data={estudiantes} />
+                            )}
+                        </section>
+                    )}
+
                     {tab === "sala" && (
                         <section>
                             <p className="mb-6 text-sm text-slate-500">Disponibilidad de la sala para la semana.</p>
@@ -287,5 +453,109 @@ export default function AyudantePage() {
                 </div>
             </main>
         </div>
+
+        {modal === "crear" && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+                <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                    <h2 className="mb-4 text-sm font-semibold text-slate-900">
+                        Inscribir nuevo estudiante
+                    </h2>
+                    <form onSubmit={handleCrearEstudiante} className="space-y-4">
+                        <div className="grid grid-cols-2 gap-3">
+                            <div>
+                                <label className="mb-1.5 block text-xs font-medium text-slate-600">
+                                    Nombre
+                                </label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={formNombre}
+                                    onChange={(e) => setFormNombre(e.target.value)}
+                                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-[#E94E77] focus:ring-4 focus:ring-[#E94E77]/15"
+                                />
+                            </div>
+                            <div>
+                                <label className="mb-1.5 block text-xs font-medium text-slate-600">
+                                    Apellido
+                                </label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={formApellido}
+                                    onChange={(e) => setFormApellido(e.target.value)}
+                                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-[#E94E77] focus:ring-4 focus:ring-[#E94E77]/15"
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="mb-1.5 block text-xs font-medium text-slate-600">
+                                Email
+                            </label>
+                            <input
+                                type="email"
+                                required
+                                value={formEmail}
+                                onChange={(e) => setFormEmail(e.target.value)}
+                                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-[#E94E77] focus:ring-4 focus:ring-[#E94E77]/15"
+                            />
+                        </div>
+                        <div>
+                            <label className="mb-1.5 block text-xs font-medium text-slate-600">
+                                Contraseña
+                            </label>
+                            <input
+                                type="password"
+                                required
+                                minLength={6}
+                                value={formPassword}
+                                onChange={(e) => setFormPassword(e.target.value)}
+                                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-[#E94E77] focus:ring-4 focus:ring-[#E94E77]/15"
+                            />
+                        </div>
+                        <div>
+                            <label className="mb-1.5 block text-xs font-medium text-slate-600">
+                                Curso (opcional)
+                            </label>
+                            <select
+                                value={formCursoId}
+                                onChange={(e) => setFormCursoId(e.target.value)}
+                                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-[#E94E77] focus:ring-4 focus:ring-[#E94E77]/15"
+                            >
+                                <option value="">Sin curso</option>
+                                {cursos.map((c) => (
+                                    <option key={c.id} value={c.id}>
+                                        {c.nombre}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {formError && (
+                            <p className="rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-700">
+                                {formError}
+                            </p>
+                        )}
+
+                        <div className="flex justify-end gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setModal(null)}
+                                className="rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-600 transition-colors hover:bg-slate-50"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={formSubmitting}
+                                className="rounded-lg bg-[#E94E77] px-4 py-2 text-sm font-medium text-white shadow-sm shadow-[#E94E77]/25 transition-colors hover:bg-[#d83d66] disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                                {formSubmitting ? "Creando..." : "Crear Estudiante"}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        )}
+        </>
     )
 }
