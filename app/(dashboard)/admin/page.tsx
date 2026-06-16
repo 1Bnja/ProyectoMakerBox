@@ -1,18 +1,18 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Sidebar } from "@/app/components/Sidebar"
 import { StatusBadge } from "@/app/components/StatusBadge"
 import { StatCard } from "@/app/components/StatCard"
 import { DataTable, type Column } from "@/app/components/DataTable"
 
-/* ---------- mock typings ---------- */
-
 interface Usuario {
+    id: string
     nombre: string
+    apellido: string
     email: string
     rol: string
-    estado: string
+    activo: boolean
 }
 
 interface Curso {
@@ -38,14 +38,6 @@ interface Solicitud {
     fecha: string
 }
 
-const usuarios: Usuario[] = [
-    { nombre: "Lukas Avello", email: "lukas@utalca.cl", rol: "Ayudante", estado: "Activo" },
-    { nombre: "María García", email: "maria@utalca.cl", rol: "Profesor", estado: "Activo" },
-    { nombre: "Pedro Soto", email: "pedro@utalca.cl", rol: "Estudiante", estado: "Inactivo" },
-    { nombre: "Ana Torres", email: "ana@utalca.cl", rol: "Estudiante", estado: "Activo" },
-    { nombre: "Camila Rojas", email: "camila@utalca.cl", rol: "Ayudante", estado: "Activo" },
-]
-
 const cursos: Curso[] = [
     { nombre: "Diseño 3D Avanzado", sigla: "ING-301", ayudante: "Lukas Avello", estudiantes: 24 },
     { nombre: "Prototipado Rápido", sigla: "ING-204", ayudante: "Camila Rojas", estudiantes: 18 },
@@ -65,33 +57,6 @@ const solicitudes: Solicitud[] = [
     { id: "S-002", nombre: "Soporte Monitor", solicitante: "Ana Torres", tipo: "Curso", estado: "APROBADA", fecha: "2026-06-13" },
     { id: "S-003", nombre: "Carcasa Arduino", solicitante: "Pedro Soto", tipo: "Personal", estado: "EN_PROGRESO", fecha: "2026-06-12" },
     { id: "S-004", nombre: "Clip Sujeción", solicitante: "María García", tipo: "Curso", estado: "RECHAZADA", fecha: "2026-06-11" },
-]
-
-/* ---------- column definitions ---------- */
-
-const colsUsuarios: Column<Usuario>[] = [
-    { key: "nombre", header: "Nombre" },
-    { key: "email", header: "Email" },
-    { key: "rol", header: "Rol" },
-    {
-        key: "estado",
-        header: "Estado",
-        render: (u) => <StatusBadge status={u.estado} />,
-    },
-    {
-        key: "acciones",
-        header: "",
-        render: () => (
-            <div className="flex gap-2">
-                <button className="rounded-md border border-slate-200 px-2.5 py-1 text-xs text-slate-500 transition-colors hover:border-[#6B3FA0]/40 hover:text-[#6B3FA0]">
-                    Editar
-                </button>
-                <button className="rounded-md border border-slate-200 px-2.5 py-1 text-xs text-slate-500 transition-colors hover:border-rose-300 hover:text-rose-600">
-                    Deshabilitar
-                </button>
-            </div>
-        ),
-    },
 ]
 
 const colsCursos: Column<Curso>[] = [
@@ -140,12 +105,120 @@ const colsSolicitudes: Column<Solicitud>[] = [
     { key: "fecha", header: "Fecha" },
 ]
 
-/* ---------- component ---------- */
-
 export default function AdminPage() {
     const [tab, setTab] = useState("usuarios")
+    const [usuarios, setUsuarios] = useState<Usuario[]>([])
+    const [loading, setLoading] = useState(true)
+    const [modal, setModal] = useState<"crear" | null>(null)
+
+    const [formNombre, setFormNombre] = useState("")
+    const [formApellido, setFormApellido] = useState("")
+    const [formEmail, setFormEmail] = useState("")
+    const [formPassword, setFormPassword] = useState("")
+    const [formRol, setFormRol] = useState("AYUDANTE")
+    const [formError, setFormError] = useState("")
+    const [formSubmitting, setFormSubmitting] = useState(false)
+
+    async function cargarUsuarios() {
+        const res = await fetch("/api/usuarios")
+        if (res.ok) {
+            const data = await res.json()
+            setUsuarios(data)
+        }
+        setLoading(false)
+    }
+
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        cargarUsuarios()
+    }, [])
+
+    async function handleCrearUsuario(event: React.FormEvent) {
+        event.preventDefault()
+        setFormError("")
+        setFormSubmitting(true)
+
+        const res = await fetch("/api/usuarios", {
+            method: "POST",
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                nombre: formNombre,
+                apellido: formApellido,
+                email: formEmail,
+                password: formPassword,
+                rol: formRol,
+            }),
+        })
+
+        const data = await res.json()
+
+        if (!res.ok) {
+            setFormError(data.error)
+            setFormSubmitting(false)
+            return
+        }
+
+        setFormNombre("")
+        setFormApellido("")
+        setFormEmail("")
+        setFormPassword("")
+        setFormRol("AYUDANTE")
+        setFormSubmitting(false)
+        setModal(null)
+        cargarUsuarios()
+    }
+
+    async function handleToggleActivo(usuario: Usuario) {
+        const res = await fetch(`/api/usuarios/${usuario.id}`, {
+            method: "PATCH",
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ activo: !usuario.activo }),
+        })
+
+        if (res.ok) {
+            cargarUsuarios()
+        }
+    }
+
+    const colsUsuarios: Column<Usuario>[] = [
+        {
+            key: "nombre",
+            header: "Nombre",
+            render: (u) => `${u.nombre} ${u.apellido}`,
+        },
+        { key: "email", header: "Email" },
+        { key: "rol", header: "Rol" },
+        {
+            key: "estado",
+            header: "Estado",
+            render: (u) => (
+                <StatusBadge status={u.activo ? "Activo" : "Inactivo"} />
+            ),
+        },
+        {
+            key: "acciones",
+            header: "",
+            render: (u) => (
+                <div className="flex gap-2">
+                    <button
+                        onClick={() => handleToggleActivo(u)}
+                        className={`rounded-md border px-2.5 py-1 text-xs transition-colors ${
+                            u.activo
+                                ? "border-rose-200 text-rose-600 hover:bg-rose-50"
+                                : "border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                        }`}
+                    >
+                        {u.activo ? "Deshabilitar" : "Habilitar"}
+                    </button>
+                </div>
+            ),
+        },
+    ]
 
     return (
+        <>
         <div className="flex w-full">
             <Sidebar rol="ADMIN" activeTab={tab} onTabChange={setTab} />
 
@@ -162,7 +235,7 @@ export default function AdminPage() {
 
                 <div className="p-8">
                     <div className="mb-8 grid grid-cols-4 gap-4">
-                        <StatCard label="Usuarios totales" value="5" accent="purple" />
+                        <StatCard label="Usuarios totales" value={String(usuarios.length)} accent="purple" />
                         <StatCard label="Cursos activos" value="3" accent="blue" />
                         <StatCard label="Items en stock" value="5" accent="pink" />
                         <StatCard label="Solicitudes pendientes" value="1" accent="purple" />
@@ -171,12 +244,21 @@ export default function AdminPage() {
                     {tab === "usuarios" && (
                         <section>
                             <div className="mb-4 flex items-center justify-between">
-                                <p className="text-sm text-slate-500">Lista de usuarios registrados en el sistema.</p>
-                                <button className="rounded-lg bg-[#6B3FA0] px-4 py-2 text-sm font-medium text-white shadow-sm shadow-[#6B3FA0]/20 transition-colors hover:bg-[#5a3488]">
+                                <p className="text-sm text-slate-500">Lista de ayudantes y profesores registrados en el sistema.</p>
+                                <button
+                                    onClick={() => setModal("crear")}
+                                    className="rounded-lg bg-[#6B3FA0] px-4 py-2 text-sm font-medium text-white shadow-sm shadow-[#6B3FA0]/20 transition-colors hover:bg-[#5a3488]"
+                                >
                                     + Nuevo Usuario
                                 </button>
                             </div>
-                            <DataTable columns={colsUsuarios} data={usuarios} />
+                            {loading ? (
+                                <div className="flex items-center justify-center py-16 text-sm text-slate-500">
+                                    Cargando usuarios...
+                                </div>
+                            ) : (
+                                <DataTable columns={colsUsuarios} data={usuarios} />
+                            )}
                         </section>
                     )}
 
@@ -220,10 +302,108 @@ export default function AdminPage() {
                 </div>
             </main>
         </div>
+
+        {modal === "crear" && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+                <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+                    <h2 className="mb-4 text-sm font-semibold text-slate-900">
+                        Crear nuevo usuario
+                    </h2>
+                    <form onSubmit={handleCrearUsuario} className="space-y-4">
+                        <div className="grid grid-cols-2 gap-3">
+                            <div>
+                                <label className="mb-1.5 block text-xs font-medium text-slate-600">
+                                    Nombre
+                                </label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={formNombre}
+                                    onChange={(e) => setFormNombre(e.target.value)}
+                                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-[#6B3FA0] focus:ring-4 focus:ring-[#6B3FA0]/15"
+                                />
+                            </div>
+                            <div>
+                                <label className="mb-1.5 block text-xs font-medium text-slate-600">
+                                    Apellido
+                                </label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={formApellido}
+                                    onChange={(e) => setFormApellido(e.target.value)}
+                                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-[#6B3FA0] focus:ring-4 focus:ring-[#6B3FA0]/15"
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="mb-1.5 block text-xs font-medium text-slate-600">
+                                Email
+                            </label>
+                            <input
+                                type="email"
+                                required
+                                value={formEmail}
+                                onChange={(e) => setFormEmail(e.target.value)}
+                                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-[#6B3FA0] focus:ring-4 focus:ring-[#6B3FA0]/15"
+                            />
+                        </div>
+                        <div>
+                            <label className="mb-1.5 block text-xs font-medium text-slate-600">
+                                Contraseña
+                            </label>
+                            <input
+                                type="password"
+                                required
+                                minLength={6}
+                                value={formPassword}
+                                onChange={(e) => setFormPassword(e.target.value)}
+                                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-[#6B3FA0] focus:ring-4 focus:ring-[#6B3FA0]/15"
+                            />
+                        </div>
+                        <div>
+                            <label className="mb-1.5 block text-xs font-medium text-slate-600">
+                                Rol
+                            </label>
+                            <select
+                                value={formRol}
+                                onChange={(e) => setFormRol(e.target.value)}
+                                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-[#6B3FA0] focus:ring-4 focus:ring-[#6B3FA0]/15"
+                            >
+                                <option value="AYUDANTE">Ayudante</option>
+                                <option value="PROFESOR">Profesor</option>
+                            </select>
+                        </div>
+
+                        {formError && (
+                            <p className="rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-700">
+                                {formError}
+                            </p>
+                        )}
+
+                        <div className="flex justify-end gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setModal(null)}
+                                className="rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-600 transition-colors hover:bg-slate-50"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={formSubmitting}
+                                className="rounded-lg bg-[#6B3FA0] px-4 py-2 text-sm font-medium text-white shadow-sm shadow-[#6B3FA0]/20 transition-colors hover:bg-[#5a3488] disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                                {formSubmitting ? "Creando..." : "Crear Usuario"}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        )}
+        </>
     )
 }
-
-/* ---------- sub-components ---------- */
 
 function FilterPill({ label }: { label: string }) {
     return (
