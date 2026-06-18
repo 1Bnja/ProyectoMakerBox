@@ -64,4 +64,46 @@ describe('IMP-02: Formulario de Solicitud (Estudiante)', () => {
       /* eslint-enable @typescript-eslint/naming-convention */
     })
   })
+
+  it('muestra un mensaje de error cuando el insert falla', async () => {
+    const supabaseMock = getSupabaseClient() as unknown as { insert: ReturnType<typeof vi.fn> }
+    supabaseMock.insert.mockResolvedValueOnce({ error: new Error('Fallo de conexión') })
+
+    render(<FormularioSolicitudEstudiante onCancelar={() => {}} />)
+
+    await userEvent.type(screen.getByLabelText(/nombre de la pieza/i), 'Engranaje Proyecto')
+    await userEvent.type(screen.getByLabelText(/descripción/i), 'Pieza para robótica')
+
+    await waitFor(() => {
+      expect(screen.getAllByRole('option').length).toBeGreaterThan(2)
+    })
+
+    await userEvent.selectOptions(screen.getByLabelText(/selecciona tu curso/i), '11111111-1111-1111-1111-111111111111')
+    await userEvent.selectOptions(screen.getByLabelText(/selecciona tu grupo/i), '11111111-1111-1111-1111-111111111111')
+
+    fireEvent.submit(screen.getByRole('button', { name: /enviar solicitud/i }))
+
+    expect(await screen.findByText('Fallo de conexión')).toBeInTheDocument()
+  })
+
+  it('muestra el mensaje de un error que no es instancia de Error', async () => {
+    const supabaseMock = getSupabaseClient() as unknown as { insert: ReturnType<typeof vi.fn> }
+    supabaseMock.insert.mockResolvedValueOnce({ error: { message: 'Error con forma de objeto plano' } })
+
+    render(<FormularioSolicitudEstudiante onCancelar={() => {}} />)
+
+    await userEvent.type(screen.getByLabelText(/nombre de la pieza/i), 'Engranaje Proyecto')
+    await userEvent.type(screen.getByLabelText(/descripción/i), 'Pieza para robótica')
+
+    await waitFor(() => {
+      expect(screen.getAllByRole('option').length).toBeGreaterThan(2)
+    })
+
+    await userEvent.selectOptions(screen.getByLabelText(/selecciona tu curso/i), '11111111-1111-1111-1111-111111111111')
+    await userEvent.selectOptions(screen.getByLabelText(/selecciona tu grupo/i), '11111111-1111-1111-1111-111111111111')
+
+    fireEvent.submit(screen.getByRole('button', { name: /enviar solicitud/i }))
+
+    expect(await screen.findByText('Error con forma de objeto plano')).toBeInTheDocument()
+  })
 })

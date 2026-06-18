@@ -101,6 +101,19 @@ describe('IMP-03: Dashboard Ayudante - Filtros Cruzados', () => {
         //'Engranaje' debería volver a aparecer
         expect(screen.getByText('Engranaje')).toBeInTheDocument()
     })
+    it('limpia el filtro de prioridad al hacer clic en "Todas"', () => {
+        render(<AyudantePage />)
+
+        // filtro de prioridad que esconde la mayoría
+        fireEvent.click(screen.getAllByText('Alta')[0])
+        expect(screen.queryByText('Soporte Monitor')).not.toBeInTheDocument()
+
+        // limpiar el filtro de prioridad haciendo clic en "Todas"
+        fireEvent.click(screen.getByText('Todas'))
+
+        // 'Soporte Monitor' debería volver a aparecer
+        expect(screen.getByText('Soporte Monitor')).toBeInTheDocument()
+    })
     it('permite aprobar una solicitud pendiente', () => {
         render(<AyudantePage />)
         

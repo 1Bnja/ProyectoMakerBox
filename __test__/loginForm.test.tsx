@@ -62,4 +62,20 @@ describe('AUTH-01 - Formulario de login', () => {
     expect(await screen.findByText(/credenciales inválidas/i)).toBeInTheDocument()
     expect(mockPush).not.toHaveBeenCalled()
   })
+
+  it('muestra un mensaje genérico cuando el error no trae descripción', async () => {
+    vi.mocked(login).mockResolvedValue({ error: undefined })
+
+    render(<LoginPage />)
+
+    fireEvent.change(screen.getByLabelText(/correo electrónico/i), {
+      target: { value: 'usuario@ejemplo.com' },
+    })
+    fireEvent.change(screen.getByLabelText(/contraseña/i), {
+      target: { value: 'malacontrasena' },
+    })
+    fireEvent.submit(screen.getByRole('button', { name: /iniciar sesión/i }))
+
+    expect(await screen.findByText(/ocurrió un error al iniciar sesión/i)).toBeInTheDocument()
+  })
 })
