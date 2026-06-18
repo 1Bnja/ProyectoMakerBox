@@ -147,7 +147,7 @@ export default function FormularioSolicitudEstudiante({ onCancelar }: Formulario
           <span className="block text-sm font-medium text-slate-700 mb-2">Modelo 3D (.stl) *</span>
           <input type="file" id="archivo" accept=".stl" required onChange={handleFileChange} className="hidden" />
           <label htmlFor="archivo" className="flex w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 py-6 px-4 text-center text-sm text-slate-500 transition-colors hover:border-[#6B3FA0] hover:bg-[#6B3FA0]/5">
-            {archivo ? <span className="font-semibold text-[#6B3FA0]">Archivo: {archivo.name}</span> : <span>Haz click aquí para buscar tu archivo 3D</span>}
+            {archivo ? <span className="font-semibold text-[#6B3FA0]">Archivo: {archivo.name}</span> : <span>Haz click aquí para buscar tu archivo 3D...</span>}
           </label>
         </div>
 
