@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import FormularioSolicitudEstudiante from '@/app/(dashboard)/estudiante/FormularioSolicitud'
-import { vi } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { getSupabaseClient } from '@/lib/supabase/client'
 
 // Mock de Supabase actualizado para simular que nos devuelve UUIDs reales
@@ -48,7 +48,11 @@ describe('IMP-02: Formulario de Solicitud (Estudiante)', () => {
     await waitFor(() => {
       expect(supabaseMock.from).toHaveBeenCalledWith('impresiones')
       /* eslint-disable @typescript-eslint/naming-convention */
-      expect(supabaseMock.insert).toHaveBeenCalledWith(
+      
+      // Le decimos a TypeScript exactamente qué forma tiene este mock sin usar 'any'
+      const mockInsert = (supabaseMock as unknown as { insert: ReturnType<typeof vi.fn> }).insert;
+      
+      expect(mockInsert).toHaveBeenCalledWith(
         expect.arrayContaining([
           expect.objectContaining({
             user_id: 'user-estudiante-123',
