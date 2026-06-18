@@ -9,8 +9,8 @@ const styles: Record<string, string> = {
     PENDIENTE: "bg-amber-50 text-amber-700 border-amber-200",
     APROBADA: "bg-emerald-50 text-emerald-700 border-emerald-200",
     RECHAZADA: "bg-rose-50 text-rose-700 border-rose-200",
-    EN_PROGRESO: "bg-[#3AB0FF]/10 text-[#1f7fbf] border-[#3AB0FF]/30",
-    IMPRESA: "bg-[#6B3FA0]/10 text-[#6B3FA0] border-[#6B3FA0]/25",
+    EN_PROGRESO: "bg-[#50D4F2]/15 text-[#1c7f99] border-[#50D4F2]/40",
+    IMPRESA: "bg-[#4A2775]/10 text-[#4A2775] border-[#4A2775]/25",
     Activo: "bg-emerald-50 text-emerald-700 border-emerald-200",
     Inactivo: "bg-slate-100 text-slate-500 border-slate-200",
 }

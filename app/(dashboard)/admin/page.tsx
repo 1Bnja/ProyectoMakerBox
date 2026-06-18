@@ -1,10 +1,16 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Sidebar } from "@/app/components/Sidebar"
 import { StatusBadge } from "@/app/components/StatusBadge"
 import { StatCard } from "@/app/components/StatCard"
 import { DataTable, type Column } from "@/app/components/DataTable"
+import { DashboardShell } from "@/app/components/DashboardShell"
+import { SectionToolbar } from "@/app/components/SectionToolbar"
+import { FilterPill } from "@/app/components/FilterPill"
+import { Button } from "@/app/components/Button"
+import { Modal } from "@/app/components/Modal"
+import { FormField, FormSelect } from "@/app/components/FormField"
+import { ActivoToggle } from "@/app/components/ActivoToggle"
 
 interface Usuario {
     id: string
@@ -67,11 +73,7 @@ const colsCursos: Column<Curso>[] = [
     {
         key: "acciones",
         header: "",
-        render: () => (
-            <button className="rounded-md border border-slate-200 px-2.5 py-1 text-xs text-slate-500 transition-colors hover:border-[#6B3FA0]/40 hover:text-[#6B3FA0]">
-                Gestionar
-            </button>
-        ),
+        render: () => <Button variant="outline">Gestionar</Button>,
     },
 ]
 
@@ -109,7 +111,7 @@ export default function AdminPage() {
     const [tab, setTab] = useState("usuarios")
     const [usuarios, setUsuarios] = useState<Usuario[]>([])
     const [loading, setLoading] = useState(true)
-    const [modal, setModal] = useState<"crear" | null>(null)
+    const [modalAbierto, setModalAbierto] = useState(false)
 
     const [formNombre, setFormNombre] = useState("")
     const [formApellido, setFormApellido] = useState("")
@@ -165,7 +167,7 @@ export default function AdminPage() {
         setFormPassword("")
         setFormRol("AYUDANTE")
         setFormSubmitting(false)
-        setModal(null)
+        setModalAbierto(false)
         cargarUsuarios()
     }
 
@@ -193,187 +195,120 @@ export default function AdminPage() {
         {
             key: "estado",
             header: "Estado",
-            render: (u) => (
-                <StatusBadge status={u.activo ? "Activo" : "Inactivo"} />
-            ),
+            render: (u) => <StatusBadge status={u.activo ? "Activo" : "Inactivo"} />,
         },
         {
             key: "acciones",
             header: "",
             render: (u) => (
                 <div className="flex gap-2">
-                    <button
+                    <ActivoToggle
+                        activo={u.activo}
+                        labels={["Deshabilitar", "Habilitar"]}
                         onClick={() => handleToggleActivo(u)}
-                        className={`rounded-md border px-2.5 py-1 text-xs transition-colors ${
-                            u.activo
-                                ? "border-rose-200 text-rose-600 hover:bg-rose-50"
-                                : "border-emerald-200 text-emerald-700 hover:bg-emerald-50"
-                        }`}
-                    >
-                        {u.activo ? "Deshabilitar" : "Habilitar"}
-                    </button>
+                    />
                 </div>
             ),
         },
     ]
 
     return (
-        <>
-        <div className="flex w-full">
-            <Sidebar rol="ADMIN" activeTab={tab} onTabChange={setTab} />
+        <DashboardShell rol="ADMIN" tab={tab} onTabChange={setTab} title={tab}>
+            <div className="mb-8 grid grid-cols-4 gap-4">
+                <StatCard label="Usuarios totales" value={String(usuarios.length)} accent="purple" />
+                <StatCard label="Cursos activos" value="3" accent="blue" />
+                <StatCard label="Items en stock" value="5" accent="pink" />
+                <StatCard label="Solicitudes pendientes" value="1" accent="purple" />
+            </div>
 
-            <main className="flex-1 overflow-auto">
-                <header className="flex items-center justify-between border-b border-slate-200 bg-white/70 px-8 py-5 backdrop-blur-sm">
-                    <h1 className="text-lg font-semibold text-slate-900 capitalize">{tab}</h1>
-                    <div className="flex items-center gap-3 text-sm text-slate-500">
-                        <span className="flex items-center gap-2">
-                            <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                            Conectado
-                        </span>
-                    </div>
-                </header>
-
-                <div className="p-8">
-                    <div className="mb-8 grid grid-cols-4 gap-4">
-                        <StatCard label="Usuarios totales" value={String(usuarios.length)} accent="purple" />
-                        <StatCard label="Cursos activos" value="3" accent="blue" />
-                        <StatCard label="Items en stock" value="5" accent="pink" />
-                        <StatCard label="Solicitudes pendientes" value="1" accent="purple" />
-                    </div>
-
-                    {tab === "usuarios" && (
-                        <section>
-                            <div className="mb-4 flex items-center justify-between">
-                                <p className="text-sm text-slate-500">Lista de ayudantes y profesores registrados en el sistema.</p>
-                                <button
-                                    onClick={() => setModal("crear")}
-                                    className="rounded-lg bg-[#6B3FA0] px-4 py-2 text-sm font-medium text-white shadow-sm shadow-[#6B3FA0]/20 transition-colors hover:bg-[#5a3488]"
-                                >
-                                    + Nuevo Usuario
-                                </button>
-                            </div>
-                            {loading ? (
-                                <div className="flex items-center justify-center py-16 text-sm text-slate-500">
-                                    Cargando usuarios...
-                                </div>
-                            ) : (
-                                <DataTable columns={colsUsuarios} data={usuarios} />
-                            )}
-                        </section>
+            {tab === "usuarios" && (
+                <section>
+                    <SectionToolbar descripcion="Lista de ayudantes y profesores registrados en el sistema.">
+                        <Button onClick={() => setModalAbierto(true)}>+ Nuevo Usuario</Button>
+                    </SectionToolbar>
+                    {loading ? (
+                        <div className="flex items-center justify-center py-16 text-sm text-slate-500">
+                            Cargando usuarios...
+                        </div>
+                    ) : (
+                        <DataTable columns={colsUsuarios} data={usuarios} />
                     )}
+                </section>
+            )}
 
-                    {tab === "cursos" && (
-                        <section>
-                            <div className="mb-4 flex items-center justify-between">
-                                <p className="text-sm text-slate-500">Cursos con ayudantías activas.</p>
-                                <button className="rounded-lg bg-[#6B3FA0] px-4 py-2 text-sm font-medium text-white shadow-sm shadow-[#6B3FA0]/20 transition-colors hover:bg-[#5a3488]">
-                                    + Nuevo Curso
-                                </button>
-                            </div>
-                            <DataTable columns={colsCursos} data={cursos} />
-                        </section>
-                    )}
+            {tab === "cursos" && (
+                <section>
+                    <SectionToolbar descripcion="Cursos con ayudantías activas.">
+                        <Button>+ Nuevo Curso</Button>
+                    </SectionToolbar>
+                    <DataTable columns={colsCursos} data={cursos} />
+                </section>
+            )}
 
-                    {tab === "inventario" && (
-                        <section>
-                            <div className="mb-4 flex items-center justify-between">
-                                <p className="text-sm text-slate-500">Artículos disponibles en inventario.</p>
-                                <button className="rounded-lg bg-[#6B3FA0] px-4 py-2 text-sm font-medium text-white shadow-sm shadow-[#6B3FA0]/20 transition-colors hover:bg-[#5a3488]">
-                                    + Agregar Artículo
-                                </button>
-                            </div>
-                            <DataTable columns={colsInv} data={inventario} />
-                        </section>
-                    )}
+            {tab === "inventario" && (
+                <section>
+                    <SectionToolbar descripcion="Artículos disponibles en inventario.">
+                        <Button>+ Agregar Artículo</Button>
+                    </SectionToolbar>
+                    <DataTable columns={colsInv} data={inventario} />
+                </section>
+            )}
 
-                    {tab === "solicitudes" && (
-                        <section>
-                            <div className="mb-4 flex items-center justify-between">
-                                <p className="text-sm text-slate-500">Todas las solicitudes de impresión.</p>
-                                <div className="flex gap-2">
-                                    <FilterPill label="Pendientes" />
-                                    <FilterPill label="Aprobadas" />
-                                    <FilterPill label="Rechazadas" />
-                                </div>
-                            </div>
-                            <DataTable columns={colsSolicitudes} data={solicitudes} />
-                        </section>
-                    )}
-                </div>
-            </main>
-        </div>
+            {tab === "solicitudes" && (
+                <section>
+                    <SectionToolbar descripcion="Todas las solicitudes de impresión.">
+                        <div className="flex gap-2">
+                            <FilterPill label="Pendientes" />
+                            <FilterPill label="Aprobadas" />
+                            <FilterPill label="Rechazadas" />
+                        </div>
+                    </SectionToolbar>
+                    <DataTable columns={colsSolicitudes} data={solicitudes} />
+                </section>
+            )}
 
-        {modal === "crear" && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
-                <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
-                    <h2 className="mb-4 text-sm font-semibold text-slate-900">
-                        Crear nuevo usuario
-                    </h2>
+            {modalAbierto && (
+                <Modal title="Crear nuevo usuario">
                     <form onSubmit={handleCrearUsuario} className="space-y-4">
                         <div className="grid grid-cols-2 gap-3">
-                            <div>
-                                <label className="mb-1.5 block text-xs font-medium text-slate-600">
-                                    Nombre
-                                </label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={formNombre}
-                                    onChange={(e) => setFormNombre(e.target.value)}
-                                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-[#6B3FA0] focus:ring-4 focus:ring-[#6B3FA0]/15"
-                                />
-                            </div>
-                            <div>
-                                <label className="mb-1.5 block text-xs font-medium text-slate-600">
-                                    Apellido
-                                </label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={formApellido}
-                                    onChange={(e) => setFormApellido(e.target.value)}
-                                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-[#6B3FA0] focus:ring-4 focus:ring-[#6B3FA0]/15"
-                                />
-                            </div>
-                        </div>
-                        <div>
-                            <label className="mb-1.5 block text-xs font-medium text-slate-600">
-                                Email
-                            </label>
-                            <input
-                                type="email"
+                            <FormField
+                                label="Nombre"
+                                type="text"
                                 required
-                                value={formEmail}
-                                onChange={(e) => setFormEmail(e.target.value)}
-                                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-[#6B3FA0] focus:ring-4 focus:ring-[#6B3FA0]/15"
+                                value={formNombre}
+                                onChange={(e) => setFormNombre(e.target.value)}
+                            />
+                            <FormField
+                                label="Apellido"
+                                type="text"
+                                required
+                                value={formApellido}
+                                onChange={(e) => setFormApellido(e.target.value)}
                             />
                         </div>
-                        <div>
-                            <label className="mb-1.5 block text-xs font-medium text-slate-600">
-                                Contraseña
-                            </label>
-                            <input
-                                type="password"
-                                required
-                                minLength={6}
-                                value={formPassword}
-                                onChange={(e) => setFormPassword(e.target.value)}
-                                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-[#6B3FA0] focus:ring-4 focus:ring-[#6B3FA0]/15"
-                            />
-                        </div>
-                        <div>
-                            <label className="mb-1.5 block text-xs font-medium text-slate-600">
-                                Rol
-                            </label>
-                            <select
-                                value={formRol}
-                                onChange={(e) => setFormRol(e.target.value)}
-                                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-[#6B3FA0] focus:ring-4 focus:ring-[#6B3FA0]/15"
-                            >
-                                <option value="AYUDANTE">Ayudante</option>
-                                <option value="PROFESOR">Profesor</option>
-                            </select>
-                        </div>
+                        <FormField
+                            label="Email"
+                            type="email"
+                            required
+                            value={formEmail}
+                            onChange={(e) => setFormEmail(e.target.value)}
+                        />
+                        <FormField
+                            label="Contraseña"
+                            type="password"
+                            required
+                            minLength={6}
+                            value={formPassword}
+                            onChange={(e) => setFormPassword(e.target.value)}
+                        />
+                        <FormSelect
+                            label="Rol"
+                            value={formRol}
+                            onChange={(e) => setFormRol(e.target.value)}
+                        >
+                            <option value="AYUDANTE">Ayudante</option>
+                            <option value="PROFESOR">Profesor</option>
+                        </FormSelect>
 
                         {formError && (
                             <p className="rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-700">
@@ -382,33 +317,16 @@ export default function AdminPage() {
                         )}
 
                         <div className="flex justify-end gap-3">
-                            <button
-                                type="button"
-                                onClick={() => setModal(null)}
-                                className="rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-600 transition-colors hover:bg-slate-50"
-                            >
+                            <Button type="button" variant="secondary" onClick={() => setModalAbierto(false)}>
                                 Cancelar
-                            </button>
-                            <button
-                                type="submit"
-                                disabled={formSubmitting}
-                                className="rounded-lg bg-[#6B3FA0] px-4 py-2 text-sm font-medium text-white shadow-sm shadow-[#6B3FA0]/20 transition-colors hover:bg-[#5a3488] disabled:cursor-not-allowed disabled:opacity-60"
-                            >
+                            </Button>
+                            <Button type="submit" disabled={formSubmitting}>
                                 {formSubmitting ? "Creando..." : "Crear Usuario"}
-                            </button>
+                            </Button>
                         </div>
                     </form>
-                </div>
-            </div>
-        )}
-        </>
-    )
-}
-
-function FilterPill({ label }: { label: string }) {
-    return (
-        <button className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-500 transition-colors hover:border-[#6B3FA0]/40 hover:text-[#6B3FA0]">
-            {label}
-        </button>
+                </Modal>
+            )}
+        </DashboardShell>
     )
 }

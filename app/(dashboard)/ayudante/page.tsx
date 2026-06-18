@@ -1,10 +1,14 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { Sidebar } from "@/app/components/Sidebar"
+import { useState } from "react"
 import { StatusBadge } from "@/app/components/StatusBadge"
 import { StatCard } from "@/app/components/StatCard"
 import { DataTable, type Column } from "@/app/components/DataTable"
+import { DashboardShell } from "@/app/components/DashboardShell"
+import { EstudiantesSection } from "@/app/components/EstudiantesSection"
+import { SectionToolbar } from "@/app/components/SectionToolbar"
+import { FilterPill } from "@/app/components/FilterPill"
+import { Button } from "@/app/components/Button"
 import {
     aprobarSolicitud,
     puedeGestionarSolicitud,
@@ -27,22 +31,6 @@ interface Bloque {
     dia: string
     hora: string
     disponible: boolean
-}
-
-interface Estudiante {
-    id: string
-    nombre: string
-    apellido: string
-    email: string
-    activo: boolean
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    curso_id: string | null
-    cursos: { nombre: string } | null
-}
-
-interface Curso {
-    id: string
-    nombre: string
 }
 
 const horarios: Bloque[] = [
@@ -98,130 +86,6 @@ export default function AyudantePage() {
         { id: "S-005", nombre: "Soporte Teléfono", solicitante: "Camila Rojas", tipo: "Personal", estado: "PENDIENTE", fecha: "2026-06-10", prioridad: "Media" },
         { id: "S-006", nombre: "Base Laptop", solicitante: "Lukas Avello", tipo: "Curso", estado: "PENDIENTE", fecha: "2026-06-09", prioridad: "Alta" },
     ])
-
-    const [estudiantes, setEstudiantes] = useState<Estudiante[]>([])
-    const [cursos, setCursos] = useState<Curso[]>([])
-    const [estudiantesLoading, setEstudiantesLoading] = useState(true)
-    const [modal, setModal] = useState<"crear" | null>(null)
-    const [formNombre, setFormNombre] = useState("")
-    const [formApellido, setFormApellido] = useState("")
-    const [formEmail, setFormEmail] = useState("")
-    const [formPassword, setFormPassword] = useState("")
-    const [formCursoId, setFormCursoId] = useState("")
-    const [formError, setFormError] = useState("")
-    const [formSubmitting, setFormSubmitting] = useState(false)
-
-    async function cargarEstudiantes() {
-        const res = await fetch("/api/estudiantes")
-        if (res.ok) {
-            const data = await res.json()
-            setEstudiantes(data)
-        }
-        setEstudiantesLoading(false)
-    }
-
-    async function cargarCursos() {
-        const res = await fetch("/api/cursos")
-        if (res.ok) {
-            const data = await res.json()
-            setCursos(data)
-        }
-    }
-
-    useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        cargarEstudiantes()
-        cargarCursos()
-    }, [])
-
-    async function handleCrearEstudiante(event: React.FormEvent) {
-        event.preventDefault()
-        setFormError("")
-        setFormSubmitting(true)
-
-        const res = await fetch("/api/estudiantes", {
-            method: "POST",
-            // eslint-disable-next-line @typescript-eslint/naming-convention
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                nombre: formNombre,
-                apellido: formApellido,
-                email: formEmail,
-                password: formPassword,
-                // eslint-disable-next-line @typescript-eslint/naming-convention
-                curso_id: formCursoId || null,
-            }),
-        })
-
-        const data = await res.json()
-
-        if (!res.ok) {
-            setFormError(data.error)
-            setFormSubmitting(false)
-            return
-        }
-
-        setFormNombre("")
-        setFormApellido("")
-        setFormEmail("")
-        setFormPassword("")
-        setFormCursoId("")
-        setFormSubmitting(false)
-        setModal(null)
-        cargarEstudiantes()
-    }
-
-    async function handleToggleActivo(estudiante: Estudiante) {
-        const res = await fetch(`/api/estudiantes/${estudiante.id}`, {
-            method: "PATCH",
-            // eslint-disable-next-line @typescript-eslint/naming-convention
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ activo: !estudiante.activo }),
-        })
-
-        if (res.ok) {
-            cargarEstudiantes()
-        }
-    }
-
-    const colsEstudiantes: Column<Estudiante>[] = [
-        {
-            key: "nombre",
-            header: "Nombre",
-            render: (e) => `${e.nombre} ${e.apellido}`,
-        },
-        { key: "email", header: "Email" },
-        {
-            key: "curso",
-            header: "Curso",
-            render: (e) => e.cursos?.nombre ?? "—",
-        },
-        {
-            key: "estado",
-            header: "Estado",
-            render: (e) => (
-                <StatusBadge status={e.activo ? "Activo" : "Inactivo"} />
-            ),
-        },
-        {
-            key: "acciones",
-            header: "",
-            render: (e) => (
-                <div className="flex gap-2">
-                    <button
-                        onClick={() => handleToggleActivo(e)}
-                        className={`rounded-md border px-2.5 py-1 text-xs transition-colors ${
-                            e.activo
-                                ? "border-rose-200 text-rose-600 hover:bg-rose-50"
-                                : "border-emerald-200 text-emerald-700 hover:bg-emerald-50"
-                        }`}
-                    >
-                        {e.activo ? "Retirar" : "Reactivar"}
-                    </button>
-                </div>
-            ),
-        },
-    ]
 
     const colsSolicitudes: Column<Solicitud>[] = [
         { key: "id", header: "ID" },
@@ -300,7 +164,7 @@ export default function AyudantePage() {
                             }
                             placeholder="Retroalimentación para rechazar"
                             rows={2}
-                            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-600 outline-none transition-colors placeholder:text-slate-400 focus:border-[#E94E77]/40 focus:ring-2 focus:ring-[#E94E77]/10"
+                            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-600 outline-none transition-colors placeholder:text-slate-400 focus:border-[#BC367B]/40 focus:ring-2 focus:ring-[#BC367B]/10"
                         />
                     </div>
                 ) : (
@@ -321,241 +185,88 @@ export default function AyudantePage() {
         : solicitudes
 
     return (
-        <>
-        <div className="flex w-full">
-            <Sidebar rol="AYUDANTE" activeTab={tab} onTabChange={setTab} />
-
-            <main className="flex-1 overflow-auto">
-                <header className="flex items-center justify-between border-b border-slate-200 bg-white/70 px-8 py-5 backdrop-blur-sm">
-                    <h1 className="text-lg font-semibold text-slate-900 capitalize">{tab}</h1>
-                    <div className="flex items-center gap-3 text-sm text-slate-500">
-                        <span className="flex items-center gap-2">
-                            <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                            Conectado
-                        </span>
+        <DashboardShell rol="AYUDANTE" tab={tab} onTabChange={setTab} title={tab}>
+            {tab === "solicitudes" && (
+                <section>
+                    <div className="mb-6 grid grid-cols-4 gap-4">
+                        <StatCard label="Pendientes" value="3" accent="pink" />
+                        <StatCard label="En progreso" value="1" accent="blue" />
+                        <StatCard label="Aprobadas hoy" value="2" accent="purple" />
+                        <StatCard label="Por revisar" value="4" accent="pink" />
                     </div>
-                </header>
+                    <SectionToolbar
+                        descripcion={filtro ? `Filtrado por: ${filtro}` : "Todas las solicitudes de impresión."}
+                    >
+                        <div className="flex gap-2">
+                            <FilterPill label="Todas" accent="pink" active={!filtro} onClick={() => setFiltro(null)} />
+                            {["PENDIENTE", "APROBADA", "RECHAZADA", "EN_PROGRESO"].map((e) => (
+                                <FilterPill
+                                    key={e}
+                                    label={e.replace("_", " ")}
+                                    accent="pink"
+                                    active={filtro === e}
+                                    onClick={() => setFiltro(e)}
+                                />
+                            ))}
+                        </div>
+                    </SectionToolbar>
+                    <DataTable columns={colsSolicitudes} data={visibles} />
+                </section>
+            )}
 
-                <div className="p-8">
-                    {tab === "solicitudes" && (
-                        <section>
-                            <div className="mb-6 grid grid-cols-4 gap-4">
-                                <StatCard label="Pendientes" value="3" accent="pink" />
-                                <StatCard label="En progreso" value="1" accent="blue" />
-                                <StatCard label="Aprobadas hoy" value="2" accent="purple" />
-                                <StatCard label="Por revisar" value="4" accent="pink" />
-                            </div>
-                            <div className="mb-4 flex items-center justify-between">
-                                <p className="text-sm text-slate-500">
-                                    {filtro ? `Filtrado por: ${filtro}` : "Todas las solicitudes de impresión."}
+            {tab === "estudiantes" && (
+                <EstudiantesSection
+                    accent="pink"
+                    descripcion="Estudiantes registrados en el sistema."
+                    botonLabel="+ Nuevo Estudiante"
+                    modalTitle="Inscribir nuevo estudiante"
+                />
+            )}
+
+            {tab === "sala" && (
+                <section>
+                    <p className="mb-6 text-sm text-slate-500">Disponibilidad de la sala para la semana.</p>
+                    <div className="grid grid-cols-5 gap-3">
+                        {["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"].map((dia, di) => (
+                            <div key={dia} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_30px_rgba(74,39,117,0.05)]">
+                                <p className="mb-3 text-center text-xs font-medium uppercase tracking-wider text-slate-500">
+                                    {dia}
                                 </p>
-                                <div className="flex gap-2">
-                                    <button
-                                        onClick={() => setFiltro(null)}
-                                        className={`rounded-full border px-3 py-1 text-xs transition-colors ${
-                                            !filtro
-                                                ? "border-[#E94E77]/30 bg-[#E94E77]/10 text-[#E94E77]"
-                                                : "border-slate-200 bg-white text-slate-500 hover:border-[#E94E77]/40 hover:text-[#E94E77]"
-                                        }`}
-                                    >
-                                        Todas
-                                    </button>
-                                    {["PENDIENTE", "APROBADA", "RECHAZADA", "EN_PROGRESO"].map((e) => (
-                                        <button
-                                            key={e}
-                                            onClick={() => setFiltro(e)}
-                                            className={`rounded-full border px-3 py-1 text-xs transition-colors ${
-                                                filtro === e
-                                                    ? "border-[#E94E77]/30 bg-[#E94E77]/10 text-[#E94E77]"
-                                                    : "border-slate-200 bg-white text-slate-500 hover:border-[#E94E77]/40 hover:text-[#E94E77]"
-                                            }`}
-                                        >
-                                            {e.replace("_", " ")}
-                                        </button>
-                                    ))}
+                                <div className="space-y-2">
+                                    {horarios
+                                        .filter((b) => b.dia === ["Lun", "Mar", "Mié", "Jue", "Vie"][di])
+                                        .map((b, i) => (
+                                            <div
+                                                key={i}
+                                                className={`rounded-lg border px-3 py-2 text-center text-xs ${
+                                                    b.disponible
+                                                        ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                                                        : "border-rose-200 bg-rose-50 text-rose-600"
+                                                }`}
+                                            >
+                                                {b.hora}
+                                            </div>
+                                        ))}
                                 </div>
                             </div>
-                            <DataTable columns={colsSolicitudes} data={visibles} />
-                        </section>
-                    )}
+                        ))}
+                    </div>
+                </section>
+            )}
 
-                    {tab === "estudiantes" && (
-                        <section>
-                            <div className="mb-4 flex items-center justify-between">
-                                <p className="text-sm text-slate-500">
-                                    Estudiantes registrados en el sistema.
-                                </p>
-                                <button
-                                    onClick={() => setModal("crear")}
-                                    className="rounded-lg bg-[#E94E77] px-4 py-2 text-sm font-medium text-white shadow-sm shadow-[#E94E77]/25 transition-colors hover:bg-[#d83d66]"
-                                >
-                                    + Nuevo Estudiante
-                                </button>
-                            </div>
-
-                            {estudiantesLoading ? (
-                                <div className="flex items-center justify-center py-16 text-sm text-slate-500">
-                                    Cargando estudiantes...
-                                </div>
-                            ) : (
-                                <DataTable columns={colsEstudiantes} data={estudiantes} />
-                            )}
-                        </section>
-                    )}
-
-                    {tab === "sala" && (
-                        <section>
-                            <p className="mb-6 text-sm text-slate-500">Disponibilidad de la sala para la semana.</p>
-                            <div className="grid grid-cols-5 gap-3">
-                                {["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"].map((dia, di) => (
-                                    <div key={dia} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_30px_rgba(107,63,160,0.05)]">
-                                        <p className="mb-3 text-center text-xs font-medium uppercase tracking-wider text-slate-500">
-                                            {dia}
-                                        </p>
-                                        <div className="space-y-2">
-                                            {horarios
-                                                .filter((b) => b.dia === ["Lun", "Mar", "Mié", "Jue", "Vie"][di])
-                                                .map((b, i) => (
-                                                    <div
-                                                        key={i}
-                                                        className={`rounded-lg border px-3 py-2 text-center text-xs ${
-                                                            b.disponible
-                                                                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                                                                : "border-rose-200 bg-rose-50 text-rose-600"
-                                                        }`}
-                                                    >
-                                                        {b.hora}
-                                                    </div>
-                                                ))}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </section>
-                    )}
-
-                    {tab === "filamento" && (
-                        <section>
-                            <div className="mb-6 grid grid-cols-3 gap-4">
-                                <StatCard label="Filamento usado hoy" value="165g" accent="pink" />
-                                <StatCard label="Filamento usado esta semana" value="720g" accent="purple" />
-                                <StatCard label="Rollos activos" value="6" accent="blue" />
-                            </div>
-                            <div className="mb-4 flex items-center justify-between">
-                                <p className="text-sm text-slate-500">Registro de uso de filamento.</p>
-                                <button className="rounded-lg bg-[#E94E77] px-4 py-2 text-sm font-medium text-white shadow-sm shadow-[#E94E77]/25 transition-colors hover:bg-[#d83d66]">
-                                    + Registrar Uso
-                                </button>
-                            </div>
-                            <DataTable columns={colsFilamento} data={filamentos} />
-                        </section>
-                    )}
-                </div>
-            </main>
-        </div>
-
-        {modal === "crear" && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
-                <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
-                    <h2 className="mb-4 text-sm font-semibold text-slate-900">
-                        Inscribir nuevo estudiante
-                    </h2>
-                    <form onSubmit={handleCrearEstudiante} className="space-y-4">
-                        <div className="grid grid-cols-2 gap-3">
-                            <div>
-                                <label className="mb-1.5 block text-xs font-medium text-slate-600">
-                                    Nombre
-                                </label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={formNombre}
-                                    onChange={(e) => setFormNombre(e.target.value)}
-                                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-[#E94E77] focus:ring-4 focus:ring-[#E94E77]/15"
-                                />
-                            </div>
-                            <div>
-                                <label className="mb-1.5 block text-xs font-medium text-slate-600">
-                                    Apellido
-                                </label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={formApellido}
-                                    onChange={(e) => setFormApellido(e.target.value)}
-                                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-[#E94E77] focus:ring-4 focus:ring-[#E94E77]/15"
-                                />
-                            </div>
-                        </div>
-                        <div>
-                            <label className="mb-1.5 block text-xs font-medium text-slate-600">
-                                Email
-                            </label>
-                            <input
-                                type="email"
-                                required
-                                value={formEmail}
-                                onChange={(e) => setFormEmail(e.target.value)}
-                                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-[#E94E77] focus:ring-4 focus:ring-[#E94E77]/15"
-                            />
-                        </div>
-                        <div>
-                            <label className="mb-1.5 block text-xs font-medium text-slate-600">
-                                Contraseña
-                            </label>
-                            <input
-                                type="password"
-                                required
-                                minLength={6}
-                                value={formPassword}
-                                onChange={(e) => setFormPassword(e.target.value)}
-                                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-[#E94E77] focus:ring-4 focus:ring-[#E94E77]/15"
-                            />
-                        </div>
-                        <div>
-                            <label className="mb-1.5 block text-xs font-medium text-slate-600">
-                                Curso (opcional)
-                            </label>
-                            <select
-                                value={formCursoId}
-                                onChange={(e) => setFormCursoId(e.target.value)}
-                                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-[#E94E77] focus:ring-4 focus:ring-[#E94E77]/15"
-                            >
-                                <option value="">Sin curso</option>
-                                {cursos.map((c) => (
-                                    <option key={c.id} value={c.id}>
-                                        {c.nombre}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        {formError && (
-                            <p className="rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-700">
-                                {formError}
-                            </p>
-                        )}
-
-                        <div className="flex justify-end gap-3">
-                            <button
-                                type="button"
-                                onClick={() => setModal(null)}
-                                className="rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-600 transition-colors hover:bg-slate-50"
-                            >
-                                Cancelar
-                            </button>
-                            <button
-                                type="submit"
-                                disabled={formSubmitting}
-                                className="rounded-lg bg-[#E94E77] px-4 py-2 text-sm font-medium text-white shadow-sm shadow-[#E94E77]/25 transition-colors hover:bg-[#d83d66] disabled:cursor-not-allowed disabled:opacity-60"
-                            >
-                                {formSubmitting ? "Creando..." : "Crear Estudiante"}
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        )}
-        </>
+            {tab === "filamento" && (
+                <section>
+                    <div className="mb-6 grid grid-cols-3 gap-4">
+                        <StatCard label="Filamento usado hoy" value="165g" accent="pink" />
+                        <StatCard label="Filamento usado esta semana" value="720g" accent="purple" />
+                        <StatCard label="Rollos activos" value="6" accent="blue" />
+                    </div>
+                    <SectionToolbar descripcion="Registro de uso de filamento.">
+                        <Button accent="pink">+ Registrar Uso</Button>
+                    </SectionToolbar>
+                    <DataTable columns={colsFilamento} data={filamentos} />
+                </section>
+            )}
+        </DashboardShell>
     )
 }

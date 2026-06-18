@@ -25,7 +25,7 @@ export function DataTable<T extends Record<string, any>>({
     }
 
     return (
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_10px_30px_rgba(107,63,160,0.05)]">
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_10px_30px_rgba(74,39,117,0.05)]">
             <table className="w-full">
                 <thead>
                     <tr className="border-b border-slate-200 bg-slate-50">
@@ -43,7 +43,7 @@ export function DataTable<T extends Record<string, any>>({
                     {data.map((item, i) => (
                         <tr
                             key={i}
-                            className="transition-colors hover:bg-[#6B3FA0]/[0.04]"
+                            className="transition-colors hover:bg-[#4A2775]/[0.04]"
                         >
                             {columns.map((col) => (
                                 <td

@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import Image from "next/image"
 import type { Rol } from "@/lib/auth/roles"
 import { logout } from "@/lib/auth/logout"
 
@@ -47,20 +48,8 @@ interface SidebarProps {
     onTabChange: (tab: string) => void
 }
 
-/* Cada rol hereda un acento de la paleta MakerBox, igual que en la landing. */
-/* eslint-disable @typescript-eslint/naming-convention */
-const accent: Record<Rol, { text: string; activeBg: string; bar: string }> = {
-    ADMIN: { text: "text-[#6B3FA0]", activeBg: "bg-[#6B3FA0]/8", bar: "bg-[#6B3FA0]" },
-    AYUDANTE: { text: "text-[#E94E77]", activeBg: "bg-[#E94E77]/8", bar: "bg-[#E94E77]" },
-    PROFESOR: { text: "text-[#3AB0FF]", activeBg: "bg-[#3AB0FF]/10", bar: "bg-[#3AB0FF]" },
-    ESTUDIANTE: { text: "text-[#6B3FA0]", activeBg: "bg-[#6B3FA0]/8", bar: "bg-[#6B3FA0]" },
-    SOLICITANTE: { text: "text-[#E94E77]", activeBg: "bg-[#E94E77]/8", bar: "bg-[#E94E77]" },
-}
-/* eslint-enable @typescript-eslint/naming-convention */
-
 export function Sidebar({ rol, activeTab, onTabChange }: SidebarProps) {
     const menu = items[rol]
-    const ac = accent[rol]
     const router = useRouter()
     const [cerrando, setCerrando] = useState(false)
 
@@ -75,14 +64,17 @@ export function Sidebar({ rol, activeTab, onTabChange }: SidebarProps) {
     }
 
     return (
-        <aside className="flex h-full w-64 flex-col border-r border-slate-200 bg-white">
-            <div className="flex items-center gap-3 border-b border-slate-200 px-5 py-5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#6B3FA0] via-[#E94E77] to-[#3AB0FF] text-xs font-bold text-white shadow-sm">
-                    MB
-                </div>
-                <div>
-                    <p className="text-sm font-semibold text-slate-900">MakerBox</p>
-                    <p className="text-xs text-slate-500 capitalize">{rol.toLowerCase()}</p>
+        <aside className="flex h-full w-64 flex-col bg-[#4A2775]">
+            <div className="border-b border-white/10 px-5 py-5">
+                <div className="rounded-xl bg-white p-3">
+                    <Image
+                        src="/logo.jpg"
+                        alt="MakerBox"
+                        width={712}
+                        height={259}
+                        className="h-auto w-full object-contain"
+                        priority
+                    />
                 </div>
             </div>
 
@@ -95,14 +87,12 @@ export function Sidebar({ rol, activeTab, onTabChange }: SidebarProps) {
                             onClick={() => onTabChange(item.id)}
                             className={`relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
                                 isActive
-                                    ? `${ac.activeBg} ${ac.text}`
-                                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                                    ? "bg-white/10 text-white"
+                                    : "text-white/70 hover:bg-white/5 hover:text-white"
                             }`}
                         >
                             {isActive && (
-                                <span
-                                    className={`absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full ${ac.bar}`}
-                                />
+                                <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-[#50D4F2]" />
                             )}
                             <span className="h-5 w-5">{item.icon}</span>
                             {item.label}
@@ -111,21 +101,17 @@ export function Sidebar({ rol, activeTab, onTabChange }: SidebarProps) {
                 })}
             </nav>
 
-            <div className="space-y-1 border-t border-slate-200 p-3">
+            <div className="space-y-1 border-t border-white/10 p-3">
                 <button
                     onClick={handleLogout}
                     disabled={cerrando}
-                    className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 transition-all hover:bg-rose-50 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-white/70 transition-all hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
                 >
                     <span className="h-5 w-5">
                         <LogoutSvg />
                     </span>
                     {cerrando ? "Cerrando sesión…" : "Cerrar sesión"}
                 </button>
-                <div className="flex items-center gap-3 px-3 py-2 text-xs text-slate-500">
-                    <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                    Sistema operativo
-                </div>
             </div>
         </aside>
     )

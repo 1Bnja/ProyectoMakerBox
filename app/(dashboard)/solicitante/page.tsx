@@ -3,9 +3,10 @@
 import { useState, type ChangeEvent, type FormEvent } from "react"
 import { getSupabaseClient } from "@/lib/supabase/client"
 import { validarDatosImpresion } from "@/lib/flujo/validacionesImpresion"
-import { Sidebar } from "@/app/components/Sidebar"
 import { StatusBadge } from "@/app/components/StatusBadge"
 import { DataTable, type Column } from "@/app/components/DataTable"
+import { DashboardShell } from "@/app/components/DashboardShell"
+import { Button } from "@/app/components/Button"
 
 /* ---------- mock history ---------- */
 
@@ -35,9 +36,9 @@ const colsHistorial: Column<SolicitudHist>[] = [
         key: "detalle",
         header: "",
         render: () => (
-            <button className="rounded-md border border-slate-200 px-2.5 py-1 text-xs text-slate-500 transition-colors hover:border-[#E94E77]/40 hover:text-[#E94E77]">
+            <Button variant="outline" accent="pink">
                 Ver detalle
-            </button>
+            </Button>
         ),
     },
 ]
@@ -181,29 +182,12 @@ export default function SolicitantePage() {
     /* ---------- render ---------- */
 
     return (
-        <div className="flex w-full">
-            <Sidebar
-                rol="SOLICITANTE"
-                activeTab={tab}
-                onTabChange={setTab}
-            />
-
-            <main className="flex-1 overflow-auto">
-                <header className="flex items-center justify-between border-b border-slate-200 bg-white/70 px-8 py-5 backdrop-blur-sm">
-                    <h1 className="text-lg font-semibold text-slate-900 capitalize">
-                        {tab === "nueva-solicitud"
-                            ? "Nueva Solicitud"
-                            : "Mis Solicitudes"}
-                    </h1>
-                    <div className="flex items-center gap-3 text-sm text-slate-500">
-                        <span className="flex items-center gap-2">
-                            <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                            Conectado
-                        </span>
-                    </div>
-                </header>
-
-                <div className="p-8">
+        <DashboardShell
+            rol="SOLICITANTE"
+            tab={tab}
+            onTabChange={setTab}
+            title={tab === "nueva-solicitud" ? "Nueva Solicitud" : "Mis Solicitudes"}
+        >
                     {tab === "nueva-solicitud" && (
                         <div
                             style={{
@@ -239,7 +223,7 @@ export default function SolicitantePage() {
 
                             <form
                                 onSubmit={handleSubmit}
-                                className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(233,78,119,0.06)]"
+                                className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(188,54,123,0.06)]"
                                 style={{
                                     display: "flex",
                                     flexDirection: "column",
@@ -257,7 +241,7 @@ export default function SolicitantePage() {
                                         htmlFor="nombre"
                                         style={{
                                             fontWeight: "bold",
-                                            color: "#6B3FA0",
+                                            color: "#4A2775",
                                             fontSize: "14px",
                                         }}
                                     >
@@ -271,7 +255,7 @@ export default function SolicitantePage() {
                                         value={datos.nombre}
                                         onChange={handleInputChange}
                                         placeholder="Ej: Engranaje de ..."
-                                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#6B3FA0] focus:ring-4 focus:ring-[#6B3FA0]/15"
+                                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#4A2775] focus:ring-4 focus:ring-[#4A2775]/15"
                                     />
                                 </div>
 
@@ -286,7 +270,7 @@ export default function SolicitantePage() {
                                         htmlFor="descripcion"
                                         style={{
                                             fontWeight: "bold",
-                                            color: "#6B3FA0",
+                                            color: "#4A2775",
                                             fontSize: "14px",
                                         }}
                                     >
@@ -300,7 +284,7 @@ export default function SolicitantePage() {
                                         value={datos.descripcion}
                                         onChange={handleInputChange}
                                         placeholder="Detalla las dimensiones aproximadas o el propósito de la pieza..."
-                                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#6B3FA0] focus:ring-4 focus:ring-[#6B3FA0]/15"
+                                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#4A2775] focus:ring-4 focus:ring-[#4A2775]/15"
                                     />
                                 </div>
 
@@ -314,7 +298,7 @@ export default function SolicitantePage() {
                                     <span
                                         style={{
                                             fontWeight: "bold",
-                                            color: "#6B3FA0",
+                                            color: "#4A2775",
                                             fontSize: "14px",
                                         }}
                                     >
@@ -332,7 +316,7 @@ export default function SolicitantePage() {
 
                                     <label
                                         htmlFor="archivo"
-                                        className="block cursor-pointer rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500 transition-all hover:border-[#6B3FA0]/40 hover:bg-[#6B3FA0]/[0.04]"
+                                        className="block cursor-pointer rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500 transition-all hover:border-[#4A2775]/40 hover:bg-[#4A2775]/[0.04]"
                                     >
                                         {archivo
                                             ? `Archivo seleccionado: ${archivo.name}`
@@ -351,7 +335,7 @@ export default function SolicitantePage() {
                                         htmlFor="comentarios"
                                         style={{
                                             fontWeight: "bold",
-                                            color: "#6B3FA0",
+                                            color: "#4A2775",
                                             fontSize: "14px",
                                         }}
                                     >
@@ -364,7 +348,7 @@ export default function SolicitantePage() {
                                         value={datos.comentarios}
                                         onChange={handleInputChange}
                                         placeholder="Especificaciones de color, relleno o material si tienes alguna preferencia..."
-                                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#6B3FA0] focus:ring-4 focus:ring-[#6B3FA0]/15"
+                                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#4A2775] focus:ring-4 focus:ring-[#4A2775]/15"
                                     />
                                 </div>
 
@@ -374,7 +358,7 @@ export default function SolicitantePage() {
                                     className={`w-full rounded-lg py-3 text-sm font-bold text-white shadow-sm transition-colors ${
                                         cargando
                                             ? "cursor-not-allowed bg-slate-300 text-slate-500"
-                                            : "bg-gradient-to-r from-[#6B3FA0] to-[#E94E77] shadow-[#E94E77]/20 hover:brightness-105"
+                                            : "bg-[#BC367B] shadow-[#BC367B]/20 hover:bg-[#a12d69]"
                                     }`}
                                 >
                                     {cargando
@@ -396,8 +380,6 @@ export default function SolicitantePage() {
                             />
                         </section>
                     )}
-                </div>
-            </main>
-        </div>
+        </DashboardShell>
     )
 }
