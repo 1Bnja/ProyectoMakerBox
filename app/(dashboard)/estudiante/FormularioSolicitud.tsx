@@ -13,7 +13,6 @@ export default function FormularioSolicitudEstudiante({ onCancelar }: Formulario
   const [mensaje, setMensaje] = useState<{ tipo: 'exito' | 'error', texto: string } | null>(null)
   const [archivo, setArchivo] = useState<File | null>(null)
   
-  // Nuevos estados para las listas dinámicas
   const [listaCursos, setListaCursos] = useState<{id: string, nombre: string}[]>([])
   const [listaGrupos, setListaGrupos] = useState<{id: string, nombre: string}[]>([])
 
@@ -26,7 +25,6 @@ export default function FormularioSolicitudEstudiante({ onCancelar }: Formulario
   })
   /* eslint-enable @typescript-eslint/naming-convention */
 
- // Cargar los cursos y grupos al abrir el modal
   useEffect(() => {
     const cargarDatos = async () => {
       const { data: dataCursos, error: errorCursos } = await supabase.from('cursos').select('id, nombre')
@@ -144,7 +142,9 @@ export default function FormularioSolicitudEstudiante({ onCancelar }: Formulario
         </div>
 
         <div>
-          <span className="block text-sm font-medium text-slate-700 mb-2">Modelo 3D (.stl) *</span>
+          <label htmlFor="archivo" className="block text-sm font-medium text-slate-700 mb-2 cursor-pointer">
+            Modelo 3D (.stl) *
+          </label>
           <input type="file" id="archivo" accept=".stl" required onChange={handleFileChange} className="hidden" />
           <label htmlFor="archivo" className="flex w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 py-6 px-4 text-center text-sm text-slate-500 transition-colors hover:border-[#6B3FA0] hover:bg-[#6B3FA0]/5">
             {archivo ? <span className="font-semibold text-[#6B3FA0]">Archivo: {archivo.name}</span> : <span>Haz click aquí para buscar tu archivo 3D...</span>}
