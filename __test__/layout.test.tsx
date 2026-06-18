@@ -20,15 +20,15 @@ describe('RootLayout - MakerBox', () => {
     expect(child.textContent).toBe('Contenido de prueba');
   });
 
-  it('debería incluir el componente Footer en todas las páginas', () => {
+  it('no debería incluir el Footer global (vive en landing y login, no en el dashboard)', () => {
     render(
       <RootLayout>
         <div>Página cualquiera</div>
       </RootLayout>
     );
 
-    const footer = screen.getByTestId('footer-mock');
-    expect(footer).toBeDefined();
+    const footer = screen.queryByTestId('footer-mock');
+    expect(footer).toBeNull();
   });
 
   it('debería aplicar el idioma español al tag html', () => {

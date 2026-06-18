@@ -6,7 +6,7 @@ describe("Home Page - MakerBox", () => {
   it("renderiza la landing pública con el contenido principal", () => {
     render(<Home />);
 
-    expect(screen.getByText(/^MakerBox$/i)).toBeDefined();
+    expect(screen.getAllByText(/^MakerBox$/i).length).toBeGreaterThan(0);
     expect(screen.getByRole("link", { name: /Ir a Login/i }).getAttribute("href")).toBe("/login");
     expect(screen.getByRole("heading", { name: /Solicitudes de impresión 3D/i, level: 3 })).toBeDefined();
     expect(screen.getByRole("heading", { name: /Control de inventario/i, level: 3 })).toBeDefined();
