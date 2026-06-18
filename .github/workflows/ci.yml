@@ -11,7 +11,7 @@ on:
       - main
 
 jobs:
-  calidad:
+  test-unitarios:
     runs-on: ubuntu-latest
 
     steps:
@@ -38,6 +38,28 @@ jobs:
 
       - name: Ejecutar tests unitarios
         run: npm run test:unit
+
+  test-integracion:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar codigo
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Compilar proyecto
+        run: npm run build
+        env:
+           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
 
       - name: Ejecutar tests de integración
         run: npm run test:integration

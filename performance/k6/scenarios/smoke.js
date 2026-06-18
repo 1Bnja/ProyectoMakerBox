@@ -13,7 +13,7 @@ export const options = {
 
 let loggedIn = false
 
-export default function () {
+export default function smokeTest() {
   if (!loggedIn) {
     const ok = login()
     check(null, { "login ok": () => ok === true })
