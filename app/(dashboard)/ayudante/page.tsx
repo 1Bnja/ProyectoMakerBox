@@ -76,7 +76,13 @@ const colsFilamento: Column<RegistroFilamento>[] = [
 
 export default function AyudantePage() {
     const [tab, setTab] = useState("solicitudes")
-    const [filtro, setFiltro] = useState<string | null>(null)
+    
+    // CAMBIO: Manejo de filtros múltiples (estado y prioridad)
+    const [filtros, setFiltros] = useState<{ estado: string | null; prioridad: string | null }>({
+        estado: null,
+        prioridad: null,
+    })
+    
     const [comentariosRechazo, setComentariosRechazo] = useState<Record<string, string>>({})
     const [solicitudes, setSolicitudes] = useState<Solicitud[]>([
         { id: "S-001", nombre: "Engranaje", solicitante: "Benjamín Silva", tipo: "Personal", estado: "PENDIENTE", fecha: "2026-06-14", prioridad: "Alta" },
@@ -180,9 +186,12 @@ export default function AyudantePage() {
         },
     ]
 
-    const visibles = filtro
-        ? solicitudes.filter((s) => s.estado === filtro)
-        : solicitudes
+    
+    const visibles = solicitudes.filter((s) => {
+        const coincideEstado = filtros.estado ? s.estado === filtros.estado : true
+        const coincidePrioridad = filtros.prioridad ? s.prioridad === filtros.prioridad : true
+        return coincideEstado && coincidePrioridad
+    })
 
     return (
         <DashboardShell rol="AYUDANTE" tab={tab} onTabChange={setTab} title={tab}>
@@ -194,22 +203,42 @@ export default function AyudantePage() {
                         <StatCard label="Aprobadas hoy" value="2" accent="purple" />
                         <StatCard label="Por revisar" value="4" accent="pink" />
                     </div>
+                    
+                   
                     <SectionToolbar
-                        descripcion={filtro ? `Filtrado por: ${filtro}` : "Todas las solicitudes de impresión."}
+                        descripcion={(filtros.estado || filtros.prioridad) ? "Resultados filtrados" : "Todas las solicitudes de impresión."}
                     >
-                        <div className="flex gap-2">
-                            <FilterPill label="Todas" accent="pink" active={!filtro} onClick={() => setFiltro(null)} />
-                            {["PENDIENTE", "APROBADA", "RECHAZADA", "EN_PROGRESO"].map((e) => (
-                                <FilterPill
-                                    key={e}
-                                    label={e.replace("_", " ")}
-                                    accent="pink"
-                                    active={filtro === e}
-                                    onClick={() => setFiltro(e)}
-                                />
-                            ))}
+                        <div className="flex flex-col gap-3">
+                            <div className="flex gap-2 items-center">
+                                <span className="text-xs font-medium text-slate-500 w-16">Estado:</span>
+                                <FilterPill label="Todos" accent="pink" active={!filtros.estado} onClick={() => setFiltros({...filtros, estado: null})} />
+                                {["PENDIENTE", "APROBADA", "RECHAZADA", "EN_PROGRESO"].map((e) => (
+                                    <FilterPill
+                                        key={e}
+                                        label={e.replace("_", " ")}
+                                        accent="pink"
+                                        active={filtros.estado === e}
+                                        onClick={() => setFiltros({...filtros, estado: e})}
+                                    />
+                                ))}
+                            </div>
+                            
+                            <div className="flex gap-2 items-center">
+                                <span className="text-xs font-medium text-slate-500 w-16">Prioridad:</span>
+                                <FilterPill label="Todas" accent="blue" active={!filtros.prioridad} onClick={() => setFiltros({...filtros, prioridad: null})} />
+                                {["Alta", "Media", "Baja"].map((p) => (
+                                    <FilterPill
+                                        key={p}
+                                        label={p}
+                                        accent="blue"
+                                        active={filtros.prioridad === p}
+                                        onClick={() => setFiltros({...filtros, prioridad: p})}
+                                    />
+                                ))}
+                            </div>
                         </div>
                     </SectionToolbar>
+                    
                     <DataTable columns={colsSolicitudes} data={visibles} />
                 </section>
             )}
