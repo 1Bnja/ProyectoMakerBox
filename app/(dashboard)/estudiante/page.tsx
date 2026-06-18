@@ -7,6 +7,7 @@ import { DashboardShell } from "@/app/components/DashboardShell"
 import { SectionToolbar } from "@/app/components/SectionToolbar"
 import { Button } from "@/app/components/Button"
 import { FormField, FormSelect } from "@/app/components/FormField"
+import FormularioSolicitudEstudiante from './FormularioSolicitud'
 
 interface Solicitud {
     id: string
@@ -73,13 +74,14 @@ const colsAyudantias: Column<Ayudantia>[] = [
 
 export default function EstudiantePage() {
     const [tab, setTab] = useState("solicitudes")
+    const [mostrarModal, setMostrarModal] = useState(false)
 
     return (
         <DashboardShell rol="ESTUDIANTE" tab={tab} onTabChange={setTab} title={tab}>
             {tab === "solicitudes" && (
                 <section>
                     <SectionToolbar descripcion="Historial de tus solicitudes de impresión.">
-                        <Button>+ Nueva Solicitud</Button>
+                        <Button onClick={() => setMostrarModal(true)}>+ Nueva Solicitud</Button>
                     </SectionToolbar>
                     <DataTable columns={colsSolicitudes} data={solicitudes} />
                 </section>
@@ -133,6 +135,11 @@ export default function EstudiantePage() {
                     </div>
                 </section>
             )}
+            {mostrarModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                <FormularioSolicitudEstudiante onCancelar={() => setMostrarModal(false)} />
+            </div>
+        )}
         </DashboardShell>
     )
 }
