@@ -33,7 +33,7 @@ global.fetch = vi.fn(() =>
 ) as unknown as typeof fetch
 
 describe('IMP-02: Formulario de Solicitud (Estudiante)', () => {
-  it('debe enviar la solicitud con tipo CURSO y los IDs correspondientes', async () => {
+  it('debe enviar la solicitud con tipo ACADEMICA y los IDs correspondientes', async () => {
     const supabaseMock = getSupabaseClient()
     render(<FormularioSolicitudEstudiante onCancelar={() => {}} />)
 

@@ -72,7 +72,7 @@ export default function FormularioSolicitudEstudiante({ onCancelar }: Formulario
       /* eslint-disable @typescript-eslint/naming-convention */
       const solicitudDatos = {
         user_id: user.id,
-        tipo: 'CURSO', 
+        tipo: 'ACADEMICA',
         curso_id: datos.curso_id,
         grupo_id: datos.grupo_id,
         stl_path: filePath,
