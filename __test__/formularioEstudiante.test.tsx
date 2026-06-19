@@ -24,6 +24,14 @@ vi.mock('@/lib/supabase/client', () => {
   }
 })
 
+// Mock de fetch para los endpoints autenticados de cursos y grupos
+global.fetch = vi.fn(() =>
+  Promise.resolve({
+    ok: true,
+    json: () => Promise.resolve([{ id: '11111111-1111-1111-1111-111111111111', nombre: 'Mock DB' }]),
+  })
+) as unknown as typeof fetch
+
 describe('IMP-02: Formulario de Solicitud (Estudiante)', () => {
   it('debe enviar la solicitud con tipo CURSO y los IDs correspondientes', async () => {
     const supabaseMock = getSupabaseClient()
