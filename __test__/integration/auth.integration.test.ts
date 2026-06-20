@@ -7,8 +7,8 @@ const mockSupabaseAuth = {
   getUser: vi.fn(),
 }
 
-vi.mock('@supabase/supabase-js', () => ({
-  createClient: vi.fn(() => ({
+vi.mock('@supabase/ssr', () => ({
+  createBrowserClient: vi.fn(() => ({
     auth: mockSupabaseAuth,
     from: vi.fn(),
   })),

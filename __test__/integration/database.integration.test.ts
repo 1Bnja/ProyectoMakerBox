@@ -2,8 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 const mockFrom = vi.fn()
 
-vi.mock('@supabase/supabase-js', () => ({
-  createClient: vi.fn(() => ({
+vi.mock('@supabase/ssr', () => ({
+  createBrowserClient: vi.fn(() => ({
     auth: {
       signInWithPassword: vi.fn(),
       signOut: vi.fn(),
@@ -91,13 +91,13 @@ describe('Integración Supabase Database', () => {
   })
 
   it('debería reutilizar la misma instancia del cliente (singleton)', async () => {
-    const { createClient } = await import('@supabase/supabase-js')
+    const { createBrowserClient } = await import('@supabase/ssr')
     const { getSupabaseClient } = await import('@/lib/supabase/client')
 
     const client1 = getSupabaseClient()
     const client2 = getSupabaseClient()
 
     expect(client1).toBe(client2)
-    expect(createClient).toHaveBeenCalledOnce()
+    expect(createBrowserClient).toHaveBeenCalledOnce()
   })
 })
