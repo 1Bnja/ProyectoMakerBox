@@ -117,7 +117,8 @@ export default function FormularioSolicitudEstudiante({ onCancelar }: Formulario
 
         <div>
           <label htmlFor="descripcion" className="block text-sm font-medium text-slate-700">Descripción *</label>
-          <textarea id="descripcion" name="descripcion" required onChange={handleInputChange} className="w-full mt-1 p-2 border rounded-md" />
+          <textarea id="descripcion" name="descripcion" required maxLength={500} onChange={handleInputChange} className="w-full mt-1 p-2 border rounded-md" />
+          <p className="mt-1 text-right text-xs text-slate-400">{datos.descripcion.length}/500 caracteres</p>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
