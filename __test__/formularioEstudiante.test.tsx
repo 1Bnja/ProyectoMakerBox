@@ -114,4 +114,30 @@ describe('IMP-02: Formulario de Solicitud (Estudiante)', () => {
 
     expect(await screen.findByText('Error con forma de objeto plano')).toBeInTheDocument()
   })
+
+  it('registra un error en consola cuando falla la carga de cursos o grupos', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    vi.mocked(global.fetch).mockImplementation((url) => {
+      const u = url.toString()
+      if (u.includes('/api/cursos')) {
+        return Promise.resolve({ ok: false, text: () => Promise.resolve('Error de cursos') }) as unknown as Promise<Response>
+      }
+      return Promise.resolve({ ok: false, text: () => Promise.resolve('Error de grupos') }) as unknown as Promise<Response>
+    })
+
+    render(<FormularioSolicitudEstudiante onCancelar={() => {}} />)
+
+    await waitFor(() => {
+      expect(consoleSpy).toHaveBeenCalledWith('Error cargando cursos:', 'Error de cursos')
+      expect(consoleSpy).toHaveBeenCalledWith('Error cargando grupos:', 'Error de grupos')
+    })
+
+    consoleSpy.mockRestore()
+    vi.mocked(global.fetch).mockImplementation(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve([{ id: '11111111-1111-1111-1111-111111111111', nombre: 'Mock DB' }]),
+      }) as unknown as Promise<Response>
+    )
+  })
 })
