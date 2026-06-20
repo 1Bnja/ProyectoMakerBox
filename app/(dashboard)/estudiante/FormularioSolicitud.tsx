@@ -27,16 +27,22 @@ export default function FormularioSolicitudEstudiante({ onCancelar }: Formulario
 
   useEffect(() => {
     const cargarDatos = async () => {
-      const { data: dataCursos, error: errorCursos } = await supabase.from('cursos').select('id, nombre')
-      if (errorCursos) console.error("Error cargando cursos:", errorCursos)
-      if (dataCursos) setListaCursos(dataCursos)
+      const resCursos = await fetch('/api/cursos')
+      if (resCursos.ok) {
+        setListaCursos(await resCursos.json())
+      } else {
+        console.error("Error cargando cursos:", await resCursos.text())
+      }
 
-      const { data: dataGrupos, error: errorGrupos } = await supabase.from('grupos').select('id, nombre')
-      if (errorGrupos) console.error("Error cargando grupos:", errorGrupos)
-      if (dataGrupos) setListaGrupos(dataGrupos)
+      const resGrupos = await fetch('/api/grupos')
+      if (resGrupos.ok) {
+        setListaGrupos(await resGrupos.json())
+      } else {
+        console.error("Error cargando grupos:", await resGrupos.text())
+      }
     }
     cargarDatos()
-  }, [supabase])
+  }, [])
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setDatos({ ...datos, [e.target.name]: e.target.value })
@@ -66,7 +72,7 @@ export default function FormularioSolicitudEstudiante({ onCancelar }: Formulario
       /* eslint-disable @typescript-eslint/naming-convention */
       const solicitudDatos = {
         user_id: user.id,
-        tipo: 'CURSO', 
+        tipo: 'ACADEMICA',
         curso_id: datos.curso_id,
         grupo_id: datos.grupo_id,
         stl_path: filePath,
@@ -117,7 +123,8 @@ export default function FormularioSolicitudEstudiante({ onCancelar }: Formulario
 
         <div>
           <label htmlFor="descripcion" className="block text-sm font-medium text-slate-700">Descripción *</label>
-          <textarea id="descripcion" name="descripcion" required onChange={handleInputChange} className="w-full mt-1 p-2 border rounded-md" />
+          <textarea id="descripcion" name="descripcion" required maxLength={500} onChange={handleInputChange} className="w-full mt-1 p-2 border rounded-md" />
+          <p className="mt-1 text-right text-xs text-slate-400">{datos.descripcion.length}/500 caracteres</p>
         </div>
 
         <div className="grid grid-cols-2 gap-4">

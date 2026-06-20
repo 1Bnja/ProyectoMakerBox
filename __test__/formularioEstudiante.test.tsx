@@ -24,8 +24,16 @@ vi.mock('@/lib/supabase/client', () => {
   }
 })
 
+// Mock de fetch para los endpoints autenticados de cursos y grupos
+global.fetch = vi.fn(() =>
+  Promise.resolve({
+    ok: true,
+    json: () => Promise.resolve([{ id: '11111111-1111-1111-1111-111111111111', nombre: 'Mock DB' }]),
+  })
+) as unknown as typeof fetch
+
 describe('IMP-02: Formulario de Solicitud (Estudiante)', () => {
-  it('debe enviar la solicitud con tipo CURSO y los IDs correspondientes', async () => {
+  it('debe enviar la solicitud con tipo ACADEMICA y los IDs correspondientes', async () => {
     const supabaseMock = getSupabaseClient()
     render(<FormularioSolicitudEstudiante onCancelar={() => {}} />)
 
@@ -105,5 +113,31 @@ describe('IMP-02: Formulario de Solicitud (Estudiante)', () => {
     fireEvent.submit(screen.getByRole('button', { name: /enviar solicitud/i }))
 
     expect(await screen.findByText('Error con forma de objeto plano')).toBeInTheDocument()
+  })
+
+  it('registra un error en consola cuando falla la carga de cursos o grupos', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    vi.mocked(global.fetch).mockImplementation((url) => {
+      const u = url.toString()
+      if (u.includes('/api/cursos')) {
+        return Promise.resolve({ ok: false, text: () => Promise.resolve('Error de cursos') }) as unknown as Promise<Response>
+      }
+      return Promise.resolve({ ok: false, text: () => Promise.resolve('Error de grupos') }) as unknown as Promise<Response>
+    })
+
+    render(<FormularioSolicitudEstudiante onCancelar={() => {}} />)
+
+    await waitFor(() => {
+      expect(consoleSpy).toHaveBeenCalledWith('Error cargando cursos:', 'Error de cursos')
+      expect(consoleSpy).toHaveBeenCalledWith('Error cargando grupos:', 'Error de grupos')
+    })
+
+    consoleSpy.mockRestore()
+    vi.mocked(global.fetch).mockImplementation(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve([{ id: '11111111-1111-1111-1111-111111111111', nombre: 'Mock DB' }]),
+      }) as unknown as Promise<Response>
+    )
   })
 })

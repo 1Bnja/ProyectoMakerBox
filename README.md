@@ -10,6 +10,9 @@ Sistema de gestión para el espacio de fabricación digital MakerBox: solicitude
 | Krisstal Hernández | 2022407012 | DEV |
 | Lukas Avello | 2021407022 | DEV |
 
+## Flujo de revisión de código
+
+Se realiza pull requiest para demostracion de video
 ## Stack
 
 - **Framework:** Next.js 16 (App Router)
