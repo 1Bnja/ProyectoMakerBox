@@ -135,9 +135,7 @@ export default function SolicitantePage() {
         setMensaje(null)
 
         try {
-            const fileExt = archivo.name.split(".").pop()
-            const fileName = `${Math.random()}.${fileExt}`
-            const filePath = `modelos/${fileName}`
+            const filePath = `modelos/${archivo.name}`
 
             const { error: uploadError } = await supabase.storage
                 .from("solicitudes-impresion")
