@@ -134,6 +134,52 @@ describe('EstudiantesSection', () => {
         })
     })
 
+    it('abre el modal de edición con los datos precargados y sin campos de email/contraseña', async () => {
+        mockFetchEstudiantesCursos()
+        const { container } = render(
+            <EstudiantesSection
+                accent="purple"
+                descripcion="Gestión de estudiantes"
+                botonLabel="Agregar Estudiante"
+                modalTitle="Crear Estudiante"
+            />
+        )
+
+        await waitFor(() => expect(screen.getByText('Ana Pérez')).toBeInTheDocument())
+
+        fireEvent.click(screen.getByText('Editar'))
+
+        expect(screen.getByRole('heading', { name: 'Editar estudiante' })).toBeInTheDocument()
+        const nombreInput = container.querySelector('input[type="text"]') as HTMLInputElement
+        expect(nombreInput).toHaveValue('Ana')
+        expect(container.querySelector('input[type="email"]')).not.toBeInTheDocument()
+        expect(container.querySelector('input[type="password"]')).not.toBeInTheDocument()
+    })
+
+    it('envía PATCH con el nuevo curso al guardar la edición', async () => {
+        mockFetchEstudiantesCursos()
+        render(
+            <EstudiantesSection
+                accent="purple"
+                descripcion="Gestión de estudiantes"
+                botonLabel="Agregar Estudiante"
+                modalTitle="Crear Estudiante"
+            />
+        )
+
+        await waitFor(() => expect(screen.getByText('Ana Pérez')).toBeInTheDocument())
+        fireEvent.click(screen.getByText('Editar'))
+
+        fireEvent.click(screen.getByText('Guardar Cambios'))
+
+        await waitFor(() => {
+            expect(global.fetch).toHaveBeenCalledWith(
+                '/api/estudiantes/1',
+                expect.objectContaining({ method: 'PATCH' })
+            )
+        })
+    })
+
     it('completa todos los campos del formulario de creación', async () => {
         mockFetchEstudiantesCursos()
         const { container } = render(

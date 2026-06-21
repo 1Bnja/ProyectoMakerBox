@@ -27,8 +27,19 @@ export function EstudiantesSection({
     modalTitle,
     children,
 }: EstudiantesSectionProps) {
-    const { estudiantes, cursos, loading, modalAbierto, setModalAbierto, form, handleCrearEstudiante, handleToggleActivo } =
-        useEstudiantes()
+    const {
+        estudiantes,
+        cursos,
+        loading,
+        modalAbierto,
+        editando,
+        form,
+        abrirModalCrear,
+        abrirModalEditar,
+        cerrarModal,
+        handleGuardarEstudiante,
+        handleToggleActivo,
+    } = useEstudiantes()
 
     const columnas: Column<Estudiante>[] = [
         {
@@ -52,6 +63,9 @@ export function EstudiantesSection({
             header: "",
             render: (e) => (
                 <div className="flex gap-2">
+                    <Button variant="outline" accent={accent} onClick={() => abrirModalEditar(e)}>
+                        Editar
+                    </Button>
                     <ActivoToggle
                         activo={e.activo}
                         labels={["Retirar", "Reactivar"]}
@@ -65,7 +79,7 @@ export function EstudiantesSection({
     return (
         <section>
             <SectionToolbar descripcion={descripcion}>
-                <Button accent={accent} onClick={() => setModalAbierto(true)}>
+                <Button accent={accent} onClick={abrirModalCrear}>
                     {botonLabel}
                 </Button>
             </SectionToolbar>
@@ -81,8 +95,8 @@ export function EstudiantesSection({
             {children}
 
             {modalAbierto && (
-                <Modal title={modalTitle}>
-                    <form onSubmit={handleCrearEstudiante} className="space-y-4">
+                <Modal title={editando ? "Editar estudiante" : modalTitle}>
+                    <form onSubmit={handleGuardarEstudiante} className="space-y-4">
                         <div className="grid grid-cols-2 gap-3">
                             <FormField
                                 label="Nombre"
@@ -101,23 +115,29 @@ export function EstudiantesSection({
                                 onChange={(e) => form.setApellido(e.target.value)}
                             />
                         </div>
-                        <FormField
-                            label="Email"
-                            accent={accent}
-                            type="email"
-                            required
-                            value={form.email}
-                            onChange={(e) => form.setEmail(e.target.value)}
-                        />
-                        <FormField
-                            label="Contraseña"
-                            accent={accent}
-                            type="password"
-                            required
-                            minLength={6}
-                            value={form.password}
-                            onChange={(e) => form.setPassword(e.target.value)}
-                        />
+
+                        {!editando && (
+                            <>
+                                <FormField
+                                    label="Email"
+                                    accent={accent}
+                                    type="email"
+                                    required
+                                    value={form.email}
+                                    onChange={(e) => form.setEmail(e.target.value)}
+                                />
+                                <FormField
+                                    label="Contraseña"
+                                    accent={accent}
+                                    type="password"
+                                    required
+                                    minLength={6}
+                                    value={form.password}
+                                    onChange={(e) => form.setPassword(e.target.value)}
+                                />
+                            </>
+                        )}
+
                         <FormSelect
                             label="Curso (opcional)"
                             accent={accent}
@@ -139,11 +159,11 @@ export function EstudiantesSection({
                         )}
 
                         <div className="flex justify-end gap-3">
-                            <Button type="button" variant="secondary" onClick={() => setModalAbierto(false)}>
+                            <Button type="button" variant="secondary" onClick={cerrarModal}>
                                 Cancelar
                             </Button>
                             <Button type="submit" accent={accent} disabled={form.submitting}>
-                                {form.submitting ? "Creando..." : "Crear Estudiante"}
+                                {form.submitting ? "Guardando..." : editando ? "Guardar Cambios" : "Crear Estudiante"}
                             </Button>
                         </div>
                     </form>

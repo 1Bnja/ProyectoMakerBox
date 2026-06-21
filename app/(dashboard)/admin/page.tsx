@@ -11,6 +11,7 @@ import { Button } from "@/app/components/Button"
 import { Modal } from "@/app/components/Modal"
 import { FormField, FormSelect } from "@/app/components/FormField"
 import { ActivoToggle } from "@/app/components/ActivoToggle"
+import { CursosSection } from "@/app/components/CursosSection"
 
 interface Usuario {
     id: string
@@ -19,13 +20,6 @@ interface Usuario {
     email: string
     rol: string
     activo: boolean
-}
-
-interface Curso {
-    nombre: string
-    sigla: string
-    ayudante: string
-    estudiantes: number
 }
 
 interface ItemInv {
@@ -44,12 +38,6 @@ interface Solicitud {
     fecha: string
 }
 
-const cursos: Curso[] = [
-    { nombre: "Diseño 3D Avanzado", sigla: "ING-301", ayudante: "Lukas Avello", estudiantes: 24 },
-    { nombre: "Prototipado Rápido", sigla: "ING-204", ayudante: "Camila Rojas", estudiantes: 18 },
-    { nombre: "Introducción a Impresión 3D", sigla: "ING-101", ayudante: "Lukas Avello", estudiantes: 30 },
-]
-
 const inventario: ItemInv[] = [
     { articulo: "Filamento PLA 1.75mm", color: "Negro", stock: 12, minimo: 5 },
     { articulo: "Filamento PLA 1.75mm", color: "Blanco", stock: 3, minimo: 5 },
@@ -63,18 +51,6 @@ const solicitudes: Solicitud[] = [
     { id: "S-002", nombre: "Soporte Monitor", solicitante: "Ana Torres", tipo: "Curso", estado: "APROBADA", fecha: "2026-06-13" },
     { id: "S-003", nombre: "Carcasa Arduino", solicitante: "Pedro Soto", tipo: "Personal", estado: "EN_PROGRESO", fecha: "2026-06-12" },
     { id: "S-004", nombre: "Clip Sujeción", solicitante: "María García", tipo: "Curso", estado: "RECHAZADA", fecha: "2026-06-11" },
-]
-
-const colsCursos: Column<Curso>[] = [
-    { key: "nombre", header: "Curso" },
-    { key: "sigla", header: "Sigla" },
-    { key: "ayudante", header: "Ayudante" },
-    { key: "estudiantes", header: "Estudiantes" },
-    {
-        key: "acciones",
-        header: "",
-        render: () => <Button variant="outline">Gestionar</Button>,
-    },
 ]
 
 const colsInv: Column<ItemInv>[] = [
@@ -236,14 +212,7 @@ export default function AdminPage() {
                 </section>
             )}
 
-            {tab === "cursos" && (
-                <section>
-                    <SectionToolbar descripcion="Cursos con ayudantías activas.">
-                        <Button>+ Nuevo Curso</Button>
-                    </SectionToolbar>
-                    <DataTable columns={colsCursos} data={cursos} />
-                </section>
-            )}
+            {tab === "cursos" && <CursosSection />}
 
             {tab === "inventario" && (
                 <section>

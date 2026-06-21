@@ -19,12 +19,13 @@ export interface Curso {
 }
 
 /* Lógica compartida de gestión de estudiantes (ayudante y profesor):
-   carga de estudiantes/cursos, creación e (in)habilitación. */
+   carga de estudiantes/cursos, creación, edición (nombre/apellido/curso) e (in)habilitación. */
 export function useEstudiantes() {
     const [estudiantes, setEstudiantes] = useState<Estudiante[]>([])
     const [cursos, setCursos] = useState<Curso[]>([])
     const [loading, setLoading] = useState(true)
     const [modalAbierto, setModalAbierto] = useState(false)
+    const [estudianteEditandoId, setEstudianteEditandoId] = useState<string | null>(null)
 
     const [formNombre, setFormNombre] = useState("")
     const [formApellido, setFormApellido] = useState("")
@@ -57,10 +58,68 @@ export function useEstudiantes() {
         cargarCursos()
     }, [])
 
-    async function handleCrearEstudiante(event: React.FormEvent) {
+    function limpiarFormulario() {
+        setFormNombre("")
+        setFormApellido("")
+        setFormEmail("")
+        setFormPassword("")
+        setFormCursoId("")
+        setFormError("")
+        setEstudianteEditandoId(null)
+    }
+
+    function abrirModalCrear() {
+        limpiarFormulario()
+        setModalAbierto(true)
+    }
+
+    function abrirModalEditar(estudiante: Estudiante) {
+        setFormNombre(estudiante.nombre)
+        setFormApellido(estudiante.apellido)
+        setFormEmail("")
+        setFormPassword("")
+        setFormCursoId(estudiante.curso_id ?? "")
+        setFormError("")
+        setEstudianteEditandoId(estudiante.id)
+        setModalAbierto(true)
+    }
+
+    function cerrarModal() {
+        setModalAbierto(false)
+        limpiarFormulario()
+    }
+
+    async function handleGuardarEstudiante(event: React.FormEvent) {
         event.preventDefault()
         setFormError("")
         setFormSubmitting(true)
+
+        if (estudianteEditandoId) {
+            const res = await fetch(`/api/estudiantes/${estudianteEditandoId}`, {
+                method: "PATCH",
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    nombre: formNombre,
+                    apellido: formApellido,
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
+                    curso_id: formCursoId || null,
+                }),
+            })
+
+            const data = await res.json()
+
+            if (!res.ok) {
+                setFormError(data.error)
+                setFormSubmitting(false)
+                return
+            }
+
+            setFormSubmitting(false)
+            cerrarModal()
+            cargarEstudiantes()
+            return
+        }
 
         const res = await fetch("/api/estudiantes", {
             method: "POST",
@@ -84,13 +143,8 @@ export function useEstudiantes() {
             return
         }
 
-        setFormNombre("")
-        setFormApellido("")
-        setFormEmail("")
-        setFormPassword("")
-        setFormCursoId("")
         setFormSubmitting(false)
-        setModalAbierto(false)
+        cerrarModal()
         cargarEstudiantes()
     }
 
@@ -112,7 +166,7 @@ export function useEstudiantes() {
         cursos,
         loading,
         modalAbierto,
-        setModalAbierto,
+        editando: estudianteEditandoId !== null,
         form: {
             nombre: formNombre,
             apellido: formApellido,
@@ -127,7 +181,10 @@ export function useEstudiantes() {
             setPassword: setFormPassword,
             setCursoId: setFormCursoId,
         },
-        handleCrearEstudiante,
+        abrirModalCrear,
+        abrirModalEditar,
+        cerrarModal,
+        handleGuardarEstudiante,
         handleToggleActivo,
     }
 }
