@@ -17,15 +17,18 @@ interface EstudiantesSectionProps {
     modalTitle: string
     /** Contenido extra que se muestra bajo la tabla (p. ej. tarjetas informativas). */
     children?: React.ReactNode
+    /** El profesor solo visualiza a sus estudiantes: sin crear, editar ni (des)habilitar. */
+    soloLectura?: boolean
 }
 
-/* Sección reutilizable de gestión de estudiantes usada por ayudante y profesor. */
+/* Sección reutilizable de visualización/gestión de estudiantes usada por ayudante (CRUD) y profesor (solo lectura). */
 export function EstudiantesSection({
     accent,
     descripcion,
     botonLabel,
     modalTitle,
     children,
+    soloLectura = false,
 }: EstudiantesSectionProps) {
     const {
         estudiantes,
@@ -58,30 +61,36 @@ export function EstudiantesSection({
             header: "Estado",
             render: (e) => <StatusBadge status={e.activo ? "Activo" : "Inactivo"} />,
         },
-        {
-            key: "acciones",
-            header: "",
-            render: (e) => (
-                <div className="flex gap-2">
-                    <Button variant="outline" accent={accent} onClick={() => abrirModalEditar(e)}>
-                        Editar
-                    </Button>
-                    <ActivoToggle
-                        activo={e.activo}
-                        labels={["Retirar", "Reactivar"]}
-                        onClick={() => handleToggleActivo(e)}
-                    />
-                </div>
-            ),
-        },
+        ...(soloLectura
+            ? []
+            : [
+                  {
+                      key: "acciones",
+                      header: "",
+                      render: (e: Estudiante) => (
+                          <div className="flex gap-2">
+                              <Button variant="outline" accent={accent} onClick={() => abrirModalEditar(e)}>
+                                  Editar
+                              </Button>
+                              <ActivoToggle
+                                  activo={e.activo}
+                                  labels={["Retirar", "Reactivar"]}
+                                  onClick={() => handleToggleActivo(e)}
+                              />
+                          </div>
+                      ),
+                  } satisfies Column<Estudiante>,
+              ]),
     ]
 
     return (
         <section>
             <SectionToolbar descripcion={descripcion}>
-                <Button accent={accent} onClick={abrirModalCrear}>
-                    {botonLabel}
-                </Button>
+                {!soloLectura && (
+                    <Button accent={accent} onClick={abrirModalCrear}>
+                        {botonLabel}
+                    </Button>
+                )}
             </SectionToolbar>
 
             {loading ? (

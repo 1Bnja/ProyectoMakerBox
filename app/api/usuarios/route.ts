@@ -17,7 +17,7 @@ export async function POST(request: Request) {
         .eq("id", user.id)
         .single()
 
-    if (!perfil || perfil.rol !== "ADMIN") {
+    if (!perfil || (perfil.rol !== "ADMIN" && perfil.rol !== "AYUDANTE")) {
         return NextResponse.json({ error: "No tienes permisos para gestionar usuarios" }, { status: 403 })
     }
 
@@ -39,6 +39,10 @@ export async function POST(request: Request) {
         return NextResponse.json({
             error: `Rol inválido. Debe ser: ${rolesPermitidos.join(" o ")}`,
         }, { status: 400 })
+    }
+
+    if (perfil.rol === "AYUDANTE" && rol !== "PROFESOR") {
+        return NextResponse.json({ error: "Como ayudante solo puedes crear profesores" }, { status: 403 })
     }
 
     const adminClient = createSupabaseAdminClient()
@@ -97,14 +101,16 @@ export async function GET() {
         .eq("id", user.id)
         .single()
 
-    if (!perfil || perfil.rol !== "ADMIN") {
+    if (!perfil || (perfil.rol !== "ADMIN" && perfil.rol !== "AYUDANTE")) {
         return NextResponse.json({ error: "No tienes permisos para ver usuarios" }, { status: 403 })
     }
+
+    const rolesVisibles = perfil.rol === "AYUDANTE" ? ["PROFESOR"] : rolesPermitidos
 
     const { data: usuarios, error } = await supabase
         .from("perfiles")
         .select("id, nombre, apellido, email, rol, activo")
-        .in("rol", rolesPermitidos)
+        .in("rol", rolesVisibles)
         .order("nombre", { ascending: true })
 
     if (error) {

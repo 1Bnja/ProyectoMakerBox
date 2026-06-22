@@ -32,6 +32,7 @@ export default function ProfesorPage() {
                     descripcion="Estudiantes inscritos en ayudantías de diseño 3D."
                     botonLabel="+ Inscribir Estudiante"
                     modalTitle="Inscribir nuevo estudiante"
+                    soloLectura
                 >
                     <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(80,212,242,0.06)]">
                         <h3 className="mb-2 text-sm font-semibold text-slate-900">

@@ -32,6 +32,13 @@ describe('Sidebar', () => {
     it('muestra el menú correspondiente al rol ADMIN', () => {
         render(<Sidebar rol="ADMIN" activeTab="usuarios" onTabChange={vi.fn()} />)
         expect(screen.getByText('Usuarios')).toBeInTheDocument()
+    })
+
+    it('muestra el menú correspondiente al rol AYUDANTE, incluyendo Cursos e Inventario', () => {
+        render(<Sidebar rol="AYUDANTE" activeTab="solicitudes" onTabChange={vi.fn()} />)
+        expect(screen.getByText('Solicitudes')).toBeInTheDocument()
+        expect(screen.getByText('Cursos')).toBeInTheDocument()
+        expect(screen.getByText('Estudiantes')).toBeInTheDocument()
         expect(screen.getByText('Inventario')).toBeInTheDocument()
     })
 

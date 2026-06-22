@@ -1,37 +1,67 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { StatusBadge } from "@/app/components/StatusBadge"
 import { StatCard } from "@/app/components/StatCard"
 import { DataTable, type Column } from "@/app/components/DataTable"
 import { DashboardShell } from "@/app/components/DashboardShell"
 import { EstudiantesSection } from "@/app/components/EstudiantesSection"
+import { CursosSection } from "@/app/components/CursosSection"
 import { SectionToolbar } from "@/app/components/SectionToolbar"
 import { FilterPill } from "@/app/components/FilterPill"
 import { Button } from "@/app/components/Button"
-import {
-    aprobarSolicitud,
-    puedeGestionarSolicitud,
-    rechazarSolicitud,
-    type EstadoSolicitudImpresion,
-} from "@/lib/impresion/gestionarSolicitud"
 
 interface Solicitud {
     id: string
-    nombre: string
-    solicitante: string
     tipo: string
-    estado: EstadoSolicitudImpresion
-    comentarioRetroalimentacion?: string | null
-    fecha: string
-    prioridad: string
+    estado: string
+    comentario: string | null
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    motivo_rechazo: string | null
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    created_at: string
+    solicitante: { nombre: string; apellido: string } | null
 }
+
+const estadosFiltrables = ["PENDIENTE", "APROBADA", "RECHAZADA", "EN_PROCESO", "FINALIZADA"]
 
 interface Bloque {
     dia: string
     hora: string
     disponible: boolean
 }
+
+interface ItemInv {
+    articulo: string
+    color: string
+    stock: number
+    minimo: number
+}
+
+const inventario: ItemInv[] = [
+    { articulo: "Filamento PLA 1.75mm", color: "Negro", stock: 12, minimo: 5 },
+    { articulo: "Filamento PLA 1.75mm", color: "Blanco", stock: 3, minimo: 5 },
+    { articulo: "Filamento PLA 1.75mm", color: "Rojo", stock: 8, minimo: 5 },
+    { articulo: "Filamento PETG 1.75mm", color: "Transparente", stock: 6, minimo: 3 },
+    { articulo: "Resina UV", color: "Gris", stock: 2, minimo: 4 },
+]
+
+const colsInv: Column<ItemInv>[] = [
+    { key: "articulo", header: "Artículo" },
+    { key: "color", header: "Color" },
+    { key: "stock", header: "Stock" },
+    { key: "minimo", header: "Stock Mín." },
+    {
+        key: "alerta",
+        header: "Alerta",
+        render: (i) =>
+            i.stock <= i.minimo ? (
+                <span className="text-xs font-medium text-rose-600">Stock bajo</span>
+            ) : (
+                <span className="text-xs text-slate-400">OK</span>
+            ),
+    },
+]
 
 const horarios: Bloque[] = [
     { dia: "Lun", hora: "09:00-10:00", disponible: true },
@@ -76,85 +106,105 @@ const colsFilamento: Column<RegistroFilamento>[] = [
 
 export default function AyudantePage() {
     const [tab, setTab] = useState("solicitudes")
-    
-    // CAMBIO: Manejo de filtros múltiples (estado y prioridad)
-    const [filtros, setFiltros] = useState<{ estado: string | null; prioridad: string | null }>({
-        estado: null,
-        prioridad: null,
-    })
-    
+    const [filtroEstado, setFiltroEstado] = useState<string | null>(null)
     const [comentariosRechazo, setComentariosRechazo] = useState<Record<string, string>>({})
-    const [solicitudes, setSolicitudes] = useState<Solicitud[]>([
-        { id: "S-001", nombre: "Engranaje", solicitante: "Benjamín Silva", tipo: "Personal", estado: "PENDIENTE", fecha: "2026-06-14", prioridad: "Alta" },
-        { id: "S-002", nombre: "Soporte Monitor", solicitante: "Ana Torres", tipo: "Curso", estado: "APROBADA", fecha: "2026-06-13", prioridad: "Media" },
-        { id: "S-003", nombre: "Carcasa Arduino", solicitante: "Pedro Soto", tipo: "Personal", estado: "EN_PROGRESO", fecha: "2026-06-12", prioridad: "Alta" },
-        { id: "S-004", nombre: "Clip Sujeción", solicitante: "María García", tipo: "Curso", estado: "RECHAZADA", comentarioRetroalimentacion: "La pieza no cumple con las medidas de seguridad requeridas.", fecha: "2026-06-11", prioridad: "Baja" },
-        { id: "S-005", nombre: "Soporte Teléfono", solicitante: "Camila Rojas", tipo: "Personal", estado: "PENDIENTE", fecha: "2026-06-10", prioridad: "Media" },
-        { id: "S-006", nombre: "Base Laptop", solicitante: "Lukas Avello", tipo: "Curso", estado: "PENDIENTE", fecha: "2026-06-09", prioridad: "Alta" },
-    ])
+    const [solicitudes, setSolicitudes] = useState<Solicitud[]>([])
+    const [loadingSolicitudes, setLoadingSolicitudes] = useState(true)
+    const [errorSolicitudes, setErrorSolicitudes] = useState("")
+
+    async function cargarSolicitudes(estado: string | null) {
+        setLoadingSolicitudes(true)
+        setErrorSolicitudes("")
+        const url = estado ? `/api/solicitudes?estado=${estado}` : "/api/solicitudes"
+        const res = await fetch(url)
+        const data = await res.json()
+
+        if (!res.ok) {
+            setErrorSolicitudes(data.error ?? "No se pudieron cargar las solicitudes")
+            setLoadingSolicitudes(false)
+            return
+        }
+
+        setSolicitudes(data)
+        setLoadingSolicitudes(false)
+    }
+
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        cargarSolicitudes(filtroEstado)
+    }, [filtroEstado])
+
+    async function handleAprobar(id: string) {
+        const res = await fetch(`/api/solicitudes/${id}`, {
+            method: "PATCH",
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ estado: "APROBADA" }),
+        })
+
+        if (res.ok) {
+            cargarSolicitudes(filtroEstado)
+        }
+    }
+
+    async function handleRechazar(id: string) {
+        const comentario = comentariosRechazo[id] ?? ""
+
+        if (!comentario.trim()) {
+            alert("Debe ingresar un motivo para rechazar la solicitud")
+            return
+        }
+
+        const res = await fetch(`/api/solicitudes/${id}`, {
+            method: "PATCH",
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            headers: { "Content-Type": "application/json" },
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            body: JSON.stringify({ estado: "RECHAZADA", motivo_rechazo: comentario }),
+        })
+
+        if (res.ok) {
+            setComentariosRechazo((actuales) => {
+                const resto = { ...actuales }
+                delete resto[id]
+                return resto
+            })
+            cargarSolicitudes(filtroEstado)
+        }
+    }
 
     const colsSolicitudes: Column<Solicitud>[] = [
-        { key: "id", header: "ID" },
-        { key: "nombre", header: "Nombre" },
-        { key: "solicitante", header: "Solicitante" },
+        {
+            key: "solicitante",
+            header: "Solicitante",
+            render: (s) => (s.solicitante ? `${s.solicitante.nombre} ${s.solicitante.apellido}` : "—"),
+        },
         { key: "tipo", header: "Tipo" },
-        { key: "prioridad", header: "Prioridad" },
         {
             key: "estado",
             header: "Estado",
             render: (s) => <StatusBadge status={s.estado} />,
         },
-        { key: "fecha", header: "Fecha" },
+        {
+            key: "created_at",
+            header: "Fecha",
+            render: (s) => new Date(s.created_at).toLocaleDateString("es-CL"),
+        },
         {
             key: "acciones",
             header: "",
             render: (s) =>
-                puedeGestionarSolicitud(s.estado) ? (
+                s.estado === "PENDIENTE" ? (
                     <div className="flex flex-col gap-2">
                         <div className="flex gap-2">
                             <button
-                                onClick={() => {
-                                    setSolicitudes((actuales) =>
-                                        actuales.map((solicitud) =>
-                                            solicitud.id === s.id
-                                                ? { ...solicitud, estado: aprobarSolicitud(solicitud.estado) }
-                                                : solicitud,
-                                        ),
-                                    )
-                                }}
+                                onClick={() => handleAprobar(s.id)}
                                 className="rounded-md border border-emerald-200 px-2.5 py-1 text-xs text-emerald-700 transition-colors hover:bg-emerald-50"
                             >
                                 Aprobar
                             </button>
                             <button
-                                onClick={() => {
-                                    const comentario = comentariosRechazo[s.id] ?? ""
-
-                                    if (!comentario.trim()) {
-                                        alert("Debe ingresar una retroalimentación para rechazar la solicitud")
-                                        return
-                                    }
-
-                                    const resultado = rechazarSolicitud(s.estado, comentario)
-
-                                    setSolicitudes((actuales) =>
-                                        actuales.map((solicitud) =>
-                                            solicitud.id === s.id
-                                                ? {
-                                                      ...solicitud,
-                                                      estado: resultado.estado,
-                                                      comentarioRetroalimentacion: resultado.comentarioRetroalimentacion,
-                                                  }
-                                                : solicitud,
-                                        ),
-                                    )
-
-                                    setComentariosRechazo((actuales) => {
-                                        const resto = { ...actuales }
-                                        delete resto[s.id]
-                                        return resto
-                                    })
-                                }}
+                                onClick={() => handleRechazar(s.id)}
                                 className="rounded-md border border-rose-200 px-2.5 py-1 text-xs text-rose-600 transition-colors hover:bg-rose-50"
                             >
                                 Rechazar
@@ -168,7 +218,7 @@ export default function AyudantePage() {
                                     [s.id]: event.target.value,
                                 }))
                             }
-                            placeholder="Retroalimentación para rechazar"
+                            placeholder="Motivo de rechazo"
                             rows={2}
                             className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-600 outline-none transition-colors placeholder:text-slate-400 focus:border-[#BC367B]/40 focus:ring-2 focus:ring-[#BC367B]/10"
                         />
@@ -176,9 +226,9 @@ export default function AyudantePage() {
                 ) : (
                     <div className="space-y-1 text-xs text-slate-400">
                         <span>—</span>
-                        {s.comentarioRetroalimentacion ? (
+                        {s.motivo_rechazo ? (
                             <p className="max-w-xs rounded-lg bg-rose-50 px-3 py-2 text-rose-700">
-                                {s.comentarioRetroalimentacion}
+                                {s.motivo_rechazo}
                             </p>
                         ) : null}
                     </div>
@@ -186,62 +236,64 @@ export default function AyudantePage() {
         },
     ]
 
-    
-    const visibles = solicitudes.filter((s) => {
-        const coincideEstado = filtros.estado ? s.estado === filtros.estado : true
-        const coincidePrioridad = filtros.prioridad ? s.prioridad === filtros.prioridad : true
-        return coincideEstado && coincidePrioridad
-    })
-
     return (
         <DashboardShell rol="AYUDANTE" tab={tab} onTabChange={setTab} title={tab}>
             {tab === "solicitudes" && (
                 <section>
                     <div className="mb-6 grid grid-cols-4 gap-4">
-                        <StatCard label="Pendientes" value="3" accent="pink" />
-                        <StatCard label="En progreso" value="1" accent="blue" />
-                        <StatCard label="Aprobadas hoy" value="2" accent="purple" />
-                        <StatCard label="Por revisar" value="4" accent="pink" />
+                        <StatCard
+                            label="Pendientes"
+                            value={String(solicitudes.filter((s) => s.estado === "PENDIENTE").length)}
+                            accent="pink"
+                        />
+                        <StatCard
+                            label="En proceso"
+                            value={String(solicitudes.filter((s) => s.estado === "EN_PROCESO").length)}
+                            accent="blue"
+                        />
+                        <StatCard
+                            label="Aprobadas"
+                            value={String(solicitudes.filter((s) => s.estado === "APROBADA").length)}
+                            accent="purple"
+                        />
+                        <StatCard
+                            label="Rechazadas"
+                            value={String(solicitudes.filter((s) => s.estado === "RECHAZADA").length)}
+                            accent="pink"
+                        />
                     </div>
-                    
-                   
-                    <SectionToolbar
-                        descripcion={(filtros.estado || filtros.prioridad) ? "Resultados filtrados" : "Todas las solicitudes de impresión."}
-                    >
-                        <div className="flex flex-col gap-3">
-                            <div className="flex gap-2 items-center">
-                                <span className="text-xs font-medium text-slate-500 w-16">Estado:</span>
-                                <FilterPill label="Todos" accent="pink" active={!filtros.estado} onClick={() => setFiltros({...filtros, estado: null})} />
-                                {["PENDIENTE", "APROBADA", "RECHAZADA", "EN_PROGRESO"].map((e) => (
-                                    <FilterPill
-                                        key={e}
-                                        label={e.replace("_", " ")}
-                                        accent="pink"
-                                        active={filtros.estado === e}
-                                        onClick={() => setFiltros({...filtros, estado: e})}
-                                    />
-                                ))}
-                            </div>
-                            
-                            <div className="flex gap-2 items-center">
-                                <span className="text-xs font-medium text-slate-500 w-16">Prioridad:</span>
-                                <FilterPill label="Todas" accent="blue" active={!filtros.prioridad} onClick={() => setFiltros({...filtros, prioridad: null})} />
-                                {["Alta", "Media", "Baja"].map((p) => (
-                                    <FilterPill
-                                        key={p}
-                                        label={p}
-                                        accent="blue"
-                                        active={filtros.prioridad === p}
-                                        onClick={() => setFiltros({...filtros, prioridad: p})}
-                                    />
-                                ))}
-                            </div>
+
+                    <SectionToolbar descripcion={filtroEstado ? "Resultados filtrados" : "Todas las solicitudes de impresión."}>
+                        <div className="flex gap-2 items-center">
+                            <span className="text-xs font-medium text-slate-500 w-16">Estado:</span>
+                            <FilterPill label="Todos" accent="pink" active={!filtroEstado} onClick={() => setFiltroEstado(null)} />
+                            {estadosFiltrables.map((e) => (
+                                <FilterPill
+                                    key={e}
+                                    label={e.replace("_", " ")}
+                                    accent="pink"
+                                    active={filtroEstado === e}
+                                    onClick={() => setFiltroEstado(e)}
+                                />
+                            ))}
                         </div>
                     </SectionToolbar>
-                    
-                    <DataTable columns={colsSolicitudes} data={visibles} />
+
+                    {errorSolicitudes && (
+                        <p className="mb-4 rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-700">{errorSolicitudes}</p>
+                    )}
+
+                    {loadingSolicitudes ? (
+                        <div className="flex items-center justify-center py-16 text-sm text-slate-500">
+                            Cargando solicitudes...
+                        </div>
+                    ) : (
+                        <DataTable columns={colsSolicitudes} data={solicitudes} />
+                    )}
                 </section>
             )}
+
+            {tab === "cursos" && <CursosSection />}
 
             {tab === "estudiantes" && (
                 <EstudiantesSection
@@ -250,6 +302,15 @@ export default function AyudantePage() {
                     botonLabel="+ Nuevo Estudiante"
                     modalTitle="Inscribir nuevo estudiante"
                 />
+            )}
+
+            {tab === "inventario" && (
+                <section>
+                    <SectionToolbar descripcion="Artículos disponibles en inventario.">
+                        <Button accent="pink">+ Agregar Artículo</Button>
+                    </SectionToolbar>
+                    <DataTable columns={colsInv} data={inventario} />
+                </section>
             )}
 
             {tab === "sala" && (

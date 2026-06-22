@@ -15,7 +15,7 @@ export async function POST(request: Request) {
         .eq("id", user.id)
         .single()
 
-    if (!perfil || (perfil.rol !== "PROFESOR" && perfil.rol !== "AYUDANTE" && perfil.rol !== "ADMIN")) {
+    if (!perfil || perfil.rol !== "AYUDANTE") {
         return NextResponse.json({ error: "No tienes permisos para crear estudiantes" }, { status: 403 })
     }
 
@@ -55,10 +55,6 @@ export async function POST(request: Request) {
         activo: true,
     }
 
-    if (cursoId) {
-        estudianteData.curso_id = cursoId
-    }
-
     const { error: perfilError } = await supabase
         .from("perfiles")
         .insert([estudianteData])
@@ -66,6 +62,17 @@ export async function POST(request: Request) {
     if (perfilError) {
         await adminClient.auth.admin.deleteUser(authData.user.id)
         return NextResponse.json({ error: perfilError.message }, { status: 500 })
+    }
+
+    if (cursoId) {
+        const { error: cursoEstudianteError } = await supabase
+            .from("curso_estudiantes")
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            .insert([{ curso_id: cursoId, estudiante_id: authData.user.id }])
+
+        if (cursoEstudianteError) {
+            return NextResponse.json({ error: cursoEstudianteError.message }, { status: 500 })
+        }
     }
 
     return NextResponse.json({
@@ -100,13 +107,18 @@ export async function GET(request: Request) {
     const url = new URL(request.url)
     const cursoId = url.searchParams.get("curso_id")
 
+    const cursoEstudiantesSelect = "curso_estudiantes(curso_id, cursos(nombre))"
     let query = supabase
         .from("perfiles")
-        .select("id, nombre, apellido, email, rol, activo, curso_id, cursos:curso_id(nombre)")
+        .select(
+            cursoId
+                ? `id, nombre, apellido, email, rol, activo, curso_estudiantes!inner(curso_id, cursos(nombre))`
+                : `id, nombre, apellido, email, rol, activo, ${cursoEstudiantesSelect}`
+        )
         .eq("rol", "ESTUDIANTE")
 
     if (cursoId) {
-        query = query.eq("curso_id", cursoId)
+        query = query.eq("curso_estudiantes.curso_id", cursoId)
     }
 
     const { data: estudiantes, error } = await query.order("nombre", { ascending: true })
@@ -115,5 +127,31 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    return NextResponse.json(estudiantes)
+    interface EstudianteRow {
+        id: string
+        nombre: string
+        apellido: string
+        email: string
+        rol: string
+        activo: boolean
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        curso_estudiantes: { curso_id: string; cursos: { nombre: string } | null }[] | null
+    }
+
+    const estudiantesPlanos = ((estudiantes ?? []) as unknown as EstudianteRow[]).map((e) => {
+        const relacion = e.curso_estudiantes?.[0] ?? null
+        return {
+            id: e.id,
+            nombre: e.nombre,
+            apellido: e.apellido,
+            email: e.email,
+            rol: e.rol,
+            activo: e.activo,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            curso_id: relacion?.curso_id ?? null,
+            cursos: relacion?.cursos ?? null,
+        }
+    })
+
+    return NextResponse.json(estudiantesPlanos)
 }

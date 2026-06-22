@@ -1,169 +1,176 @@
-import { render, screen, fireEvent } from '@testing-library/react'
-import { describe, it, expect, vi } from 'vitest'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import AyudantePage from '@/app/(dashboard)/ayudante/page'
 
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({
-    push: vi.fn(),
-    replace: vi.fn(),
-    prefetch: vi.fn(),
-    back: vi.fn(),
-  }),
-  usePathname: () => '/ayudante',
-  useSearchParams: () => new URLSearchParams(),
+    useRouter: () => ({
+        push: vi.fn(),
+        replace: vi.fn(),
+        prefetch: vi.fn(),
+        back: vi.fn(),
+    }),
+    usePathname: () => '/ayudante',
+    useSearchParams: () => new URLSearchParams(),
 }))
 
-global.fetch = vi.fn((url: string | Request | URL) => {
-    const urlString = url.toString()
-    
-    // Si el componente intenta buscar al usuario, le devolvemos uno falso
-    if (urlString.includes('/api/auth/me')) {
-        return Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve({ user: { id: '123', nombre: 'Ayudante Test', rol: 'AYUDANTE' } })
-        })
-    }
-    
-    // Para cualquier otra petición
-    return Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve({})
+const solicitudesFixture = [
+    {
+        id: 's1',
+        tipo: 'PERSONAL',
+        estado: 'PENDIENTE',
+        comentario: null,
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        motivo_rechazo: null,
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        created_at: '2026-06-14T00:00:00Z',
+        solicitante: { nombre: 'Benjamín', apellido: 'Silva' },
+    },
+    {
+        id: 's2',
+        tipo: 'ACADEMICA',
+        estado: 'APROBADA',
+        comentario: null,
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        motivo_rechazo: null,
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        created_at: '2026-06-13T00:00:00Z',
+        solicitante: { nombre: 'Ana', apellido: 'Torres' },
+    },
+]
+
+function mockFetchAyudante() {
+    global.fetch = vi.fn((url: string | Request | URL, init?: RequestInit) => {
+        const u = url.toString()
+
+        if (u.includes('/api/solicitudes/')) {
+            const body = JSON.parse((init?.body as string) ?? '{}')
+            return Promise.resolve({
+                ok: true,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                json: () => Promise.resolve({ id: 's1', estado: body.estado, motivo_rechazo: body.motivo_rechazo ?? null }),
+            })
+        }
+
+        if (u.includes('/api/solicitudes')) {
+            const params = new URL(u, 'http://localhost').searchParams
+            const estado = params.get('estado')
+            const data = estado ? solicitudesFixture.filter((s) => s.estado === estado) : solicitudesFixture
+            return Promise.resolve({ ok: true, json: () => Promise.resolve(data) })
+        }
+
+        if (u.includes('/api/auth/me')) {
+            return Promise.resolve({
+                ok: true,
+                json: () => Promise.resolve({ nombre: 'Ayudante', apellido: 'Test', rol: 'AYUDANTE' }),
+            })
+        }
+
+        return Promise.resolve({ ok: true, json: () => Promise.resolve([]) })
+    }) as unknown as typeof fetch
+}
+
+describe('IMP-03/IMP-04: Dashboard Ayudante - Solicitudes reales', () => {
+    beforeEach(() => {
+        vi.restoreAllMocks()
     })
-}) as unknown as typeof fetch
 
-describe('IMP-03: Dashboard Ayudante - Filtros Cruzados', () => {
-    
-    it('renderiza todas las solicitudes inicialmente', () => {
+    it('carga y muestra las solicitudes desde la API', async () => {
+        mockFetchAyudante()
         render(<AyudantePage />)
-        
-        // Verificar que se muestren distintas solicitudes por defecto
-        expect(screen.getByText('Engranaje')).toBeInTheDocument()
-        expect(screen.getByText('Soporte Monitor')).toBeInTheDocument() 
-        expect(screen.getByText('Clip Sujeción')).toBeInTheDocument() 
+
+        await waitFor(() => expect(screen.getByText('Benjamín Silva')).toBeInTheDocument())
+        expect(screen.getByText('Ana Torres')).toBeInTheDocument()
     })
 
-    it('filtra las solicitudes correctamente solo por Prioridad (Alta)', () => {
+    it('al filtrar por estado, vuelve a pedir la lista con el query param', async () => {
+        mockFetchAyudante()
         render(<AyudantePage />)
-        
-        // clic en filtro de prioridad (tomamos el primero que encuentra)
-        fireEvent.click(screen.getAllByText('Alta')[0])
 
-        // 'Engranaje' tiene prioridad alta, debe estar
-        expect(screen.getByText('Engranaje')).toBeInTheDocument()
-        
-        // 'Soporte Monitor' tiene prioridad media, NO debe estar
-        expect(screen.queryByText('Soporte Monitor')).not.toBeInTheDocument()
-    })
+        await waitFor(() => expect(screen.getByText('Benjamín Silva')).toBeInTheDocument())
 
-    it('filtra las solicitudes correctamente solo por Estado (APROBADA)', () => {
-        render(<AyudantePage />)
-        
-        // clic en el filtro de estado (tomamos el primero que encuentra)
         fireEvent.click(screen.getAllByText('APROBADA')[0])
 
-        // 'Soporte Monitor' está APROBADA, debe estar
-        expect(screen.getByText('Soporte Monitor')).toBeInTheDocument()
-        
-        // 'Engranaje' está PENDIENTE, NO debe estar
-        expect(screen.queryByText('Engranaje')).not.toBeInTheDocument()
+        await waitFor(() => {
+            expect(global.fetch).toHaveBeenCalledWith('/api/solicitudes?estado=APROBADA')
+        })
     })
 
-    it('aplica el filtro cruzado correctamente (PENDIENTE + Alta)', () => {
+    it('vuelve a pedir todas las solicitudes al hacer clic en "Todos"', async () => {
+        mockFetchAyudante()
         render(<AyudantePage />)
-        
-        // Activar ambos filtros simultáneamente
-        fireEvent.click(screen.getAllByText('PENDIENTE')[0])
-        fireEvent.click(screen.getAllByText('Alta')[0])
 
-        // 'Engranaje' (PENDIENTE y Alta) -> DEBE estar visible
-        expect(screen.getByText('Engranaje')).toBeInTheDocument()
-        
-        // 'Base Laptop' (PENDIENTE y Alta) -> DEBE estar visible
-        expect(screen.getByText('Base Laptop')).toBeInTheDocument()
+        await waitFor(() => expect(screen.getByText('Benjamín Silva')).toBeInTheDocument())
 
-        // 'Soporte Teléfono' (PENDIENTE pero Media) -> NO debe estar
-        expect(screen.queryByText('Soporte Teléfono')).not.toBeInTheDocument()
+        fireEvent.click(screen.getAllByText('APROBADA')[0])
+        await waitFor(() => expect(global.fetch).toHaveBeenCalledWith('/api/solicitudes?estado=APROBADA'))
 
-        // 'Carcasa Arduino' (Alta pero EN_PROGRESO) -> NO debe estar
-        expect(screen.queryByText('Carcasa Arduino')).not.toBeInTheDocument()
-    })
-
-    it('limpia los filtros al hacer clic en "Todos" / "Todas"', () => {
-        render(<AyudantePage />)
-        
-        //filtro que esconde casi todo
-        fireEvent.click(screen.getAllByText('RECHAZADA')[0])
-        expect(screen.queryByText('Engranaje')).not.toBeInTheDocument()
-
-        //limpiar el filtro de estado haciendo clic en "Todos"
         fireEvent.click(screen.getByText('Todos'))
-
-        //'Engranaje' debería volver a aparecer
-        expect(screen.getByText('Engranaje')).toBeInTheDocument()
+        await waitFor(() => expect(global.fetch).toHaveBeenCalledWith('/api/solicitudes'))
     })
-    it('limpia el filtro de prioridad al hacer clic en "Todas"', () => {
+
+    it('aprueba una solicitud pendiente con PATCH', async () => {
+        mockFetchAyudante()
         render(<AyudantePage />)
 
-        // filtro de prioridad que esconde la mayoría
-        fireEvent.click(screen.getAllByText('Alta')[0])
-        expect(screen.queryByText('Soporte Monitor')).not.toBeInTheDocument()
+        await waitFor(() => expect(screen.getByText('Benjamín Silva')).toBeInTheDocument())
 
-        // limpiar el filtro de prioridad haciendo clic en "Todas"
-        fireEvent.click(screen.getByText('Todas'))
+        fireEvent.click(screen.getByRole('button', { name: /aprobar/i }))
 
-        // 'Soporte Monitor' debería volver a aparecer
-        expect(screen.getByText('Soporte Monitor')).toBeInTheDocument()
-    })
-    it('permite aprobar una solicitud pendiente', () => {
-        render(<AyudantePage />)
-        
-        // 'Engranaje' es PENDIENTE. Buscar su botón Aprobar.
-        const botonesAprobar = screen.getAllByRole('button', { name: /aprobar/i })
-        
-        //Hacer clic en el primer botón de aprobar
-        fireEvent.click(botonesAprobar[0])
-        
-        //Como Engranaje pasó a APROBADA, ahora debería haber más de un texto 'APROBADA' en pantalla
-        expect(screen.getAllByText('APROBADA').length).toBeGreaterThan(1)
+        await waitFor(() => {
+            expect(global.fetch).toHaveBeenCalledWith(
+                '/api/solicitudes/s1',
+                expect.objectContaining({ method: 'PATCH' })
+            )
+        })
     })
 
-    it('maneja correctamente el rechazo de una solicitud', () => {
-        // Interceptr la alerta del navegador 
+    it('exige un motivo antes de rechazar', async () => {
+        mockFetchAyudante()
         const alertaMock = vi.spyOn(window, 'alert').mockImplementation(() => {})
-        
         render(<AyudantePage />)
-        
-        const botonesRechazar = screen.getAllByRole('button', { name: /rechazar/i })
-        const textareas = screen.getAllByPlaceholderText('Retroalimentación para rechazar')
 
-        //Intentar rechazar sin escribir nada
-        fireEvent.click(botonesRechazar[0])
-        expect(alertaMock).toHaveBeenCalledWith('Debe ingresar una retroalimentación para rechazar la solicitud')
+        await waitFor(() => expect(screen.getByText('Benjamín Silva')).toBeInTheDocument())
 
-        //Escribir un comentario en el textarea de esa solicitud
-        fireEvent.change(textareas[0], { target: { value: 'El modelo tiene errores estructurales' } })
+        fireEvent.click(screen.getByRole('button', { name: /rechazar/i }))
 
-        //se rechazamos
-        fireEvent.click(botonesRechazar[0])
-
-        //Verificar que el comentario se renderice en la pantalla
-        expect(screen.getByText('El modelo tiene errores estructurales')).toBeInTheDocument()
-
-        //Restaurar el comportamiento normal de la alerta
+        expect(alertaMock).toHaveBeenCalledWith('Debe ingresar un motivo para rechazar la solicitud')
         alertaMock.mockRestore()
     })
-    it('cambia a todas las pestañas correctamente', () => {
+
+    it('rechaza una solicitud con motivo y dispara el PATCH correspondiente', async () => {
+        mockFetchAyudante()
         render(<AyudantePage />)
-        
-        //vista Estudiantes
+
+        await waitFor(() => expect(screen.getByText('Benjamín Silva')).toBeInTheDocument())
+
+        fireEvent.change(screen.getByPlaceholderText('Motivo de rechazo'), {
+            target: { value: 'El modelo tiene errores estructurales' },
+        })
+        fireEvent.click(screen.getByRole('button', { name: /rechazar/i }))
+
+        await waitFor(() => {
+            expect(global.fetch).toHaveBeenCalledWith(
+                '/api/solicitudes/s1',
+                expect.objectContaining({ method: 'PATCH' })
+            )
+        })
+    })
+
+    it('cambia a todas las pestañas correctamente', async () => {
+        mockFetchAyudante()
+        render(<AyudantePage />)
+
+        await waitFor(() => expect(screen.getByText('Benjamín Silva')).toBeInTheDocument())
+
         fireEvent.click(screen.getByText(/estudiantes/i))
         expect(screen.getByText('Estudiantes registrados en el sistema.')).toBeInTheDocument()
 
-        //vista Sala
+        fireEvent.click(screen.getByText(/inventario/i))
+        expect(screen.getByText('Artículos disponibles en inventario.')).toBeInTheDocument()
+
         fireEvent.click(screen.getByText(/sala/i))
         expect(screen.getByText('Disponibilidad de la sala para la semana.')).toBeInTheDocument()
 
-        //vista Filamento
         fireEvent.click(screen.getByText(/filamento/i))
         expect(screen.getByText('Registro de uso de filamento.')).toBeInTheDocument()
     })

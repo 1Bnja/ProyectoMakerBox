@@ -38,3 +38,41 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true })
 }
+
+export async function GET(request: Request) {
+    const supabase = await createSupabaseServerClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+        return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+    }
+
+    const { data: perfil } = await supabase
+        .from("perfiles")
+        .select("rol")
+        .eq("id", user.id)
+        .single()
+
+    if (!perfil || perfil.rol !== "AYUDANTE") {
+        return NextResponse.json({ error: "No tienes permisos para ver solicitudes" }, { status: 403 })
+    }
+
+    const url = new URL(request.url)
+    const estado = url.searchParams.get("estado")
+
+    let query = supabase
+        .from("impresiones")
+        .select("id, tipo, estado, comentario, motivo_rechazo, created_at, user_id, solicitante:user_id(nombre, apellido)")
+        .order("created_at", { ascending: false })
+
+    if (estado) {
+        query = query.eq("estado", estado)
+    }
+
+    const { data, error } = await query
+
+    if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    return NextResponse.json(data)
+}

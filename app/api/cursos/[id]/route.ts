@@ -14,7 +14,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         .eq("id", user.id)
         .single()
 
-    if (!perfil || perfil.rol !== "ADMIN") {
+    if (!perfil || perfil.rol !== "AYUDANTE") {
         return NextResponse.json({ error: "No tienes permisos para editar cursos" }, { status: 403 })
     }
 
@@ -40,6 +40,21 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         updates.ayudante_id = body.ayudante_id
     }
 
+    if (body.profesor_id !== undefined) {
+        if (body.profesor_id) {
+            const { data: profesor } = await supabase
+                .from("perfiles")
+                .select("rol")
+                .eq("id", body.profesor_id)
+                .single()
+
+            if (!profesor || profesor.rol !== "PROFESOR") {
+                return NextResponse.json({ error: "El profesor seleccionado no es válido" }, { status: 400 })
+            }
+        }
+        updates.profesor_id = body.profesor_id
+    }
+
     if (Object.keys(updates).length === 0) {
         return NextResponse.json({ error: "No hay campos para actualizar" }, { status: 400 })
     }
@@ -48,7 +63,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         .from("cursos")
         .update(updates)
         .eq("id", id)
-        .select("id, nombre, sigla, semestre_id, activo, ayudante_id")
+        .select("id, nombre, sigla, semestre_id, activo, ayudante_id, profesor_id")
         .single()
 
     if (error) {

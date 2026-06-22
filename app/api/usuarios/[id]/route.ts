@@ -16,7 +16,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         .eq("id", user.id)
         .single()
 
-    if (!perfil || perfil.rol !== "ADMIN") {
+    if (!perfil || (perfil.rol !== "ADMIN" && perfil.rol !== "AYUDANTE")) {
         return NextResponse.json({ error: "No tienes permisos para editar usuarios" }, { status: 403 })
     }
 
@@ -32,11 +32,13 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         return NextResponse.json({ error: "No hay campos para actualizar" }, { status: 400 })
     }
 
+    const rolesEditables = perfil.rol === "AYUDANTE" ? ["PROFESOR"] : rolesPermitidos
+
     const { data, error } = await supabase
         .from("perfiles")
         .update(updates)
         .eq("id", id)
-        .in("rol", rolesPermitidos)
+        .in("rol", rolesEditables)
         .select("id, nombre, apellido, email, rol, activo")
         .single()
 

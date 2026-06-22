@@ -73,6 +73,9 @@ describe('useCursos', () => {
                 // eslint-disable-next-line @typescript-eslint/naming-convention
                 ayudante_id: 'a1',
                 ayudante: null,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                profesor_id: null,
+                profesor: null,
                 estudiantes: 0,
             })
         })
@@ -131,6 +134,9 @@ describe('useCursos', () => {
                 // eslint-disable-next-line @typescript-eslint/naming-convention
                 ayudante_id: null,
                 ayudante: null,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                profesor_id: null,
+                profesor: null,
                 estudiantes: 0,
             })
         })

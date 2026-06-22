@@ -10,6 +10,9 @@ export interface Curso {
     // eslint-disable-next-line @typescript-eslint/naming-convention
     ayudante_id: string | null
     ayudante: { nombre: string; apellido: string } | null
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    profesor_id: string | null
+    profesor: { nombre: string; apellido: string } | null
     estudiantes: number
 }
 
@@ -19,11 +22,18 @@ export interface Ayudante {
     apellido: string
 }
 
-/* Lógica de gestión de cursos (admin): carga de cursos/ayudantes,
+export interface Profesor {
+    id: string
+    nombre: string
+    apellido: string
+}
+
+/* Lógica de gestión de cursos (admin): carga de cursos/ayudantes/profesores,
    creación, edición y (des)activación. */
 export function useCursos() {
     const [cursos, setCursos] = useState<Curso[]>([])
     const [ayudantes, setAyudantes] = useState<Ayudante[]>([])
+    const [profesores, setProfesores] = useState<Profesor[]>([])
     const [loading, setLoading] = useState(true)
     const [modalAbierto, setModalAbierto] = useState(false)
     const [cursoEditandoId, setCursoEditandoId] = useState<string | null>(null)
@@ -31,6 +41,7 @@ export function useCursos() {
     const [formNombre, setFormNombre] = useState("")
     const [formSigla, setFormSigla] = useState("")
     const [formAyudanteId, setFormAyudanteId] = useState("")
+    const [formProfesorId, setFormProfesorId] = useState("")
     const [formError, setFormError] = useState("")
     const [formSubmitting, setFormSubmitting] = useState(false)
 
@@ -43,26 +54,26 @@ export function useCursos() {
         setLoading(false)
     }
 
-    async function cargarAyudantes() {
+    async function cargarAyudantesYProfesores() {
         const res = await fetch("/api/usuarios")
         if (res.ok) {
-            const data = await res.json()
-            setAyudantes((data as { id: string; nombre: string; apellido: string; rol: string }[]).filter(
-                (u) => u.rol === "AYUDANTE"
-            ))
+            const data = await res.json() as { id: string; nombre: string; apellido: string; rol: string }[]
+            setAyudantes(data.filter((u) => u.rol === "AYUDANTE"))
+            setProfesores(data.filter((u) => u.rol === "PROFESOR"))
         }
     }
 
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         cargarCursos()
-        cargarAyudantes()
+        cargarAyudantesYProfesores()
     }, [])
 
     function limpiarFormulario() {
         setFormNombre("")
         setFormSigla("")
         setFormAyudanteId("")
+        setFormProfesorId("")
         setFormError("")
         setCursoEditandoId(null)
     }
@@ -76,6 +87,7 @@ export function useCursos() {
         setFormNombre(curso.nombre)
         setFormSigla(curso.sigla ?? "")
         setFormAyudanteId(curso.ayudante_id ?? "")
+        setFormProfesorId(curso.profesor_id ?? "")
         setFormError("")
         setCursoEditandoId(curso.id)
         setModalAbierto(true)
@@ -96,6 +108,8 @@ export function useCursos() {
             sigla: formSigla || null,
             // eslint-disable-next-line @typescript-eslint/naming-convention
             ayudante_id: formAyudanteId || null,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            profesor_id: formProfesorId || null,
         }
 
         const res = cursoEditandoId
@@ -141,6 +155,7 @@ export function useCursos() {
     return {
         cursos,
         ayudantes,
+        profesores,
         loading,
         modalAbierto,
         editando: cursoEditandoId !== null,
@@ -148,11 +163,13 @@ export function useCursos() {
             nombre: formNombre,
             sigla: formSigla,
             ayudanteId: formAyudanteId,
+            profesorId: formProfesorId,
             error: formError,
             submitting: formSubmitting,
             setNombre: setFormNombre,
             setSigla: setFormSigla,
             setAyudanteId: setFormAyudanteId,
+            setProfesorId: setFormProfesorId,
         },
         abrirModalCrear,
         abrirModalEditar,

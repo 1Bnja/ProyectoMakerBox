@@ -9,8 +9,19 @@ function mockFetchCursosUsuarios() {
             return Promise.resolve({
                 ok: true,
                 json: () => Promise.resolve([
-                    // eslint-disable-next-line @typescript-eslint/naming-convention
-                    { id: 'c1', nombre: 'Diseño 3D Avanzado', sigla: 'ING-301', activo: true, ayudante_id: 'a1', ayudante: { nombre: 'Lukas', apellido: 'Avello' }, estudiantes: 24 },
+                    /* eslint-disable @typescript-eslint/naming-convention */
+                    {
+                        id: 'c1',
+                        nombre: 'Diseño 3D Avanzado',
+                        sigla: 'ING-301',
+                        activo: true,
+                        ayudante_id: 'a1',
+                        ayudante: { nombre: 'Lukas', apellido: 'Avello' },
+                        profesor_id: 'p1',
+                        profesor: { nombre: 'Marta', apellido: 'Reyes' },
+                        estudiantes: 24,
+                    },
+                    /* eslint-enable @typescript-eslint/naming-convention */
                 ]),
             })
         }
@@ -19,6 +30,7 @@ function mockFetchCursosUsuarios() {
                 ok: true,
                 json: () => Promise.resolve([
                     { id: 'a1', nombre: 'Lukas', apellido: 'Avello', email: 'lukas@utalca.cl', rol: 'AYUDANTE', activo: true },
+                    { id: 'p1', nombre: 'Marta', apellido: 'Reyes', email: 'marta@utalca.cl', rol: 'PROFESOR', activo: true },
                 ]),
             })
         }
@@ -46,6 +58,7 @@ describe('CursosSection', () => {
         })
         expect(screen.getByText('ING-301')).toBeInTheDocument()
         expect(screen.getByText('Lukas Avello')).toBeInTheDocument()
+        expect(screen.getByText('Marta Reyes')).toBeInTheDocument()
     })
 
     it('abre el modal de creación al hacer clic en "+ Nuevo Curso"', async () => {
@@ -70,6 +83,52 @@ describe('CursosSection', () => {
         expect(screen.getByRole('heading', { name: 'Editar curso' })).toBeInTheDocument()
         const nombreInput = container.querySelector('input[type="text"]') as HTMLInputElement
         expect(nombreInput).toHaveValue('Diseño 3D Avanzado')
+
+        const selects = container.querySelectorAll('select')
+        const profesorSelect = selects[1] as HTMLSelectElement
+        expect(profesorSelect).toHaveValue('p1')
+    })
+
+    it('lista las opciones de profesor disponibles en el formulario de creación', async () => {
+        mockFetchCursosUsuarios()
+        const { container } = render(<CursosSection />)
+
+        await waitFor(() => expect(screen.getByText('Diseño 3D Avanzado')).toBeInTheDocument())
+        fireEvent.click(screen.getByText('+ Nuevo Curso'))
+
+        const selects = container.querySelectorAll('select')
+        const profesorSelect = selects[1] as HTMLSelectElement
+        expect(profesorSelect).toHaveValue('')
+        expect(screen.getByRole('option', { name: 'Marta Reyes' })).toBeInTheDocument()
+
+        fireEvent.change(profesorSelect, { target: { value: 'p1' } })
+        expect(profesorSelect).toHaveValue('p1')
+    })
+
+    it('permite escribir nombre y sigla y enviar el formulario de creación', async () => {
+        mockFetchCursosUsuarios()
+        const { container } = render(<CursosSection />)
+
+        await waitFor(() => expect(screen.getByText('Diseño 3D Avanzado')).toBeInTheDocument())
+        fireEvent.click(screen.getByText('+ Nuevo Curso'))
+
+        const nombreInput = container.querySelector('input[type="text"]') as HTMLInputElement
+        const siglaInput = container.querySelectorAll('input[type="text"]')[1] as HTMLInputElement
+
+        fireEvent.change(nombreInput, { target: { value: 'Curso Nuevo' } })
+        fireEvent.change(siglaInput, { target: { value: 'ING-999' } })
+
+        expect(nombreInput).toHaveValue('Curso Nuevo')
+        expect(siglaInput).toHaveValue('ING-999')
+
+        fireEvent.click(screen.getByText('Crear Curso'))
+
+        await waitFor(() => {
+            expect(global.fetch).toHaveBeenCalledWith(
+                '/api/cursos',
+                expect.objectContaining({ method: 'POST' })
+            )
+        })
     })
 
     it('cierra el modal al hacer clic en Cancelar', async () => {

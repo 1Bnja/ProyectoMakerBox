@@ -10,7 +10,9 @@ const styles: Record<string, string> = {
     APROBADA: "bg-emerald-50 text-emerald-700 border-emerald-200",
     RECHAZADA: "bg-rose-50 text-rose-700 border-rose-200",
     EN_PROGRESO: "bg-[#50D4F2]/15 text-[#1c7f99] border-[#50D4F2]/40",
+    EN_PROCESO: "bg-[#50D4F2]/15 text-[#1c7f99] border-[#50D4F2]/40",
     IMPRESA: "bg-[#4A2775]/10 text-[#4A2775] border-[#4A2775]/25",
+    FINALIZADA: "bg-[#4A2775]/10 text-[#4A2775] border-[#4A2775]/25",
     Activo: "bg-emerald-50 text-emerald-700 border-emerald-200",
     Inactivo: "bg-slate-100 text-slate-500 border-slate-200",
 }

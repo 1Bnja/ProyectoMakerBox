@@ -14,6 +14,7 @@ export function CursosSection() {
     const {
         cursos,
         ayudantes,
+        profesores,
         loading,
         modalAbierto,
         editando,
@@ -36,6 +37,11 @@ export function CursosSection() {
             key: "ayudante",
             header: "Ayudante",
             render: (c) => (c.ayudante ? `${c.ayudante.nombre} ${c.ayudante.apellido}` : "—"),
+        },
+        {
+            key: "profesor",
+            header: "Profesor",
+            render: (c) => (c.profesor ? `${c.profesor.nombre} ${c.profesor.apellido}` : "—"),
         },
         { key: "estudiantes", header: "Estudiantes" },
         {
@@ -100,6 +106,18 @@ export function CursosSection() {
                             {ayudantes.map((a) => (
                                 <option key={a.id} value={a.id}>
                                     {a.nombre} {a.apellido}
+                                </option>
+                            ))}
+                        </FormSelect>
+                        <FormSelect
+                            label="Profesor (opcional)"
+                            value={form.profesorId}
+                            onChange={(e) => form.setProfesorId(e.target.value)}
+                        >
+                            <option value="">Sin profesor</option>
+                            {profesores.map((p) => (
+                                <option key={p.id} value={p.id}>
+                                    {p.nombre} {p.apellido}
                                 </option>
                             ))}
                         </FormSelect>

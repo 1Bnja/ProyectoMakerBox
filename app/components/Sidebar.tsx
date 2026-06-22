@@ -16,13 +16,12 @@ interface MenuItem {
 const items: Record<Rol, MenuItem[]> = {
     ADMIN: [
         { id: "usuarios", label: "Usuarios", icon: <UsersSvg /> },
-        { id: "cursos", label: "Cursos", icon: <BookSvg /> },
-        { id: "inventario", label: "Inventario", icon: <BoxSvg /> },
-        { id: "solicitudes", label: "Solicitudes", icon: <FileSvg /> },
     ],
     AYUDANTE: [
         { id: "solicitudes", label: "Solicitudes", icon: <FileSvg /> },
+        { id: "cursos", label: "Cursos", icon: <BookSvg /> },
         { id: "estudiantes", label: "Estudiantes", icon: <UsersSvg /> },
+        { id: "inventario", label: "Inventario", icon: <BoxSvg /> },
         { id: "sala", label: "Disponibilidad Sala", icon: <CalendarSvg /> },
         { id: "filamento", label: "Registro Filamento", icon: <DropletSvg /> },
     ],
