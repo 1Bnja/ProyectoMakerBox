@@ -10,6 +10,7 @@ import { CursosSection } from "@/app/components/CursosSection"
 import { SectionToolbar } from "@/app/components/SectionToolbar"
 import { FilterPill } from "@/app/components/FilterPill"
 import { Button } from "@/app/components/Button"
+import { SolicitudDetalleModal } from "@/app/components/SolicitudDetalleModal"
 
 interface Solicitud {
     id: string
@@ -107,10 +108,10 @@ const colsFilamento: Column<RegistroFilamento>[] = [
 export default function AyudantePage() {
     const [tab, setTab] = useState("solicitudes")
     const [filtroEstado, setFiltroEstado] = useState<string | null>(null)
-    const [comentariosRechazo, setComentariosRechazo] = useState<Record<string, string>>({})
     const [solicitudes, setSolicitudes] = useState<Solicitud[]>([])
     const [loadingSolicitudes, setLoadingSolicitudes] = useState(true)
     const [errorSolicitudes, setErrorSolicitudes] = useState("")
+    const [detalleId, setDetalleId] = useState<string | null>(null)
 
     async function cargarSolicitudes(estado: string | null) {
         setLoadingSolicitudes(true)
@@ -134,45 +135,6 @@ export default function AyudantePage() {
         cargarSolicitudes(filtroEstado)
     }, [filtroEstado])
 
-    async function handleAprobar(id: string) {
-        const res = await fetch(`/api/solicitudes/${id}`, {
-            method: "PATCH",
-            // eslint-disable-next-line @typescript-eslint/naming-convention
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ estado: "APROBADA" }),
-        })
-
-        if (res.ok) {
-            cargarSolicitudes(filtroEstado)
-        }
-    }
-
-    async function handleRechazar(id: string) {
-        const comentario = comentariosRechazo[id] ?? ""
-
-        if (!comentario.trim()) {
-            alert("Debe ingresar un motivo para rechazar la solicitud")
-            return
-        }
-
-        const res = await fetch(`/api/solicitudes/${id}`, {
-            method: "PATCH",
-            // eslint-disable-next-line @typescript-eslint/naming-convention
-            headers: { "Content-Type": "application/json" },
-            // eslint-disable-next-line @typescript-eslint/naming-convention
-            body: JSON.stringify({ estado: "RECHAZADA", motivo_rechazo: comentario }),
-        })
-
-        if (res.ok) {
-            setComentariosRechazo((actuales) => {
-                const resto = { ...actuales }
-                delete resto[id]
-                return resto
-            })
-            cargarSolicitudes(filtroEstado)
-        }
-    }
-
     const colsSolicitudes: Column<Solicitud>[] = [
         {
             key: "solicitante",
@@ -193,46 +155,14 @@ export default function AyudantePage() {
         {
             key: "acciones",
             header: "",
-            render: (s) =>
-                s.estado === "PENDIENTE" ? (
-                    <div className="flex flex-col gap-2">
-                        <div className="flex gap-2">
-                            <button
-                                onClick={() => handleAprobar(s.id)}
-                                className="rounded-md border border-emerald-200 px-2.5 py-1 text-xs text-emerald-700 transition-colors hover:bg-emerald-50"
-                            >
-                                Aprobar
-                            </button>
-                            <button
-                                onClick={() => handleRechazar(s.id)}
-                                className="rounded-md border border-rose-200 px-2.5 py-1 text-xs text-rose-600 transition-colors hover:bg-rose-50"
-                            >
-                                Rechazar
-                            </button>
-                        </div>
-                        <textarea
-                            value={comentariosRechazo[s.id] ?? ""}
-                            onChange={(event) =>
-                                setComentariosRechazo((actuales) => ({
-                                    ...actuales,
-                                    [s.id]: event.target.value,
-                                }))
-                            }
-                            placeholder="Motivo de rechazo"
-                            rows={2}
-                            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-600 outline-none transition-colors placeholder:text-slate-400 focus:border-[#BC367B]/40 focus:ring-2 focus:ring-[#BC367B]/10"
-                        />
-                    </div>
-                ) : (
-                    <div className="space-y-1 text-xs text-slate-400">
-                        <span>—</span>
-                        {s.motivo_rechazo ? (
-                            <p className="max-w-xs rounded-lg bg-rose-50 px-3 py-2 text-rose-700">
-                                {s.motivo_rechazo}
-                            </p>
-                        ) : null}
-                    </div>
-                ),
+            render: (s) => (
+                <button
+                    onClick={() => setDetalleId(s.id)}
+                    className="rounded-md border border-slate-200 px-2.5 py-1 text-xs text-slate-600 transition-colors hover:bg-slate-50"
+                >
+                    Ver detalle
+                </button>
+            ),
         },
     ]
 
@@ -289,6 +219,14 @@ export default function AyudantePage() {
                         </div>
                     ) : (
                         <DataTable columns={colsSolicitudes} data={solicitudes} />
+                    )}
+
+                    {detalleId && (
+                        <SolicitudDetalleModal
+                            id={detalleId}
+                            onClose={() => setDetalleId(null)}
+                            onCambioEstado={() => cargarSolicitudes(filtroEstado)}
+                        />
                     )}
                 </section>
             )}

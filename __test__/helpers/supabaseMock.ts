@@ -37,6 +37,7 @@ export function createMockSupabaseClient() {
     })
 
     const mockGetUser = vi.fn()
+    const mockCreateSignedUrl = vi.fn()
 
     const client = {
         auth: {
@@ -44,12 +45,18 @@ export function createMockSupabaseClient() {
             signInWithPassword: vi.fn(),
         },
         from: mockFrom,
+        storage: {
+            from: vi.fn((_bucket: string) => ({
+                createSignedUrl: mockCreateSignedUrl,
+            })),
+        },
     }
 
     return {
         client,
         mockGetUser,
         mockFrom,
+        mockCreateSignedUrl,
         /** Encola el resultado que devolverá la próxima llamada a .from(...) (en orden). */
         queueFrom(data: unknown, error: { message: string } | null = null) {
             fromQueue.push(chainable(data, error))

@@ -238,4 +238,137 @@ describe("IMP-04 - Handlers reales de PATCH /api/solicitudes/[id]", () => {
         expect(res.status).toBe(500)
     })
 })
+
+function getDetalleRequest() {
+    return new Request("http://localhost/api/solicitudes/s1")
+}
+
+/* eslint-disable @typescript-eslint/naming-convention */
+describe("IMP-05 - Handlers reales de GET /api/solicitudes/[id] (detalle)", () => {
+    beforeEach(() => {
+        vi.clearAllMocks()
+    })
+
+    it("retorna 401 si no hay usuario autenticado", async () => {
+        const { GET } = await import("@/app/api/solicitudes/[id]/route")
+        mock.setUser(null)
+
+        const res = await GET(getDetalleRequest(), { params })
+
+        expect(res.status).toBe(401)
+    })
+
+    it("retorna 403 si el usuario no es AYUDANTE", async () => {
+        const { GET } = await import("@/app/api/solicitudes/[id]/route")
+        mock.setUser({ id: "u1" })
+        mock.queueFrom({ rol: "ESTUDIANTE" })
+
+        const res = await GET(getDetalleRequest(), { params })
+
+        expect(res.status).toBe(403)
+    })
+
+    it("retorna 404 si la solicitud no existe", async () => {
+        const { GET } = await import("@/app/api/solicitudes/[id]/route")
+        mock.setUser({ id: "u1" })
+        mock.queueFrom({ rol: "AYUDANTE" })
+        mock.queueFrom(null, { message: "not found" })
+
+        const res = await GET(getDetalleRequest(), { params })
+
+        expect(res.status).toBe(404)
+    })
+
+    it("retorna el detalle con archivo_url cuando stl_path existe", async () => {
+        const { GET } = await import("@/app/api/solicitudes/[id]/route")
+        mock.setUser({ id: "u1" })
+        mock.queueFrom({ rol: "AYUDANTE" })
+        mock.queueFrom({
+            id: "s1",
+            tipo: "PERSONAL",
+            estado: "PENDIENTE",
+            comentario: "Pieza de prueba",
+            motivo_rechazo: null,
+            created_at: "2026-06-14T00:00:00Z",
+            stl_path: "modelos/a.stl",
+            diseno_path: null,
+            diseno_url: null,
+            colores: null,
+            tiempo_estimado: null,
+            observacion_ayudante: null,
+            ayudante_id: null,
+            solicitante: { nombre: "Benjamín", apellido: "Silva" },
+        })
+        mock.mockCreateSignedUrl.mockResolvedValue({
+            data: { signedUrl: "https://example.com/signed/a.stl" },
+            error: null,
+        })
+
+        const res = await GET(getDetalleRequest(), { params })
+        const body = await res.json()
+
+        expect(res.status).toBe(200)
+        expect(body.archivo_url).toBe("https://example.com/signed/a.stl")
+        expect(body.comentario).toBe("Pieza de prueba")
+        expect(body.solicitante.nombre).toBe("Benjamín")
+    })
+
+    it("retorna archivo_url null cuando stl_path es null, sin llamar a createSignedUrl", async () => {
+        const { GET } = await import("@/app/api/solicitudes/[id]/route")
+        mock.setUser({ id: "u1" })
+        mock.queueFrom({ rol: "AYUDANTE" })
+        mock.queueFrom({
+            id: "s1",
+            tipo: "PERSONAL",
+            estado: "PENDIENTE",
+            comentario: null,
+            motivo_rechazo: null,
+            created_at: "2026-06-14T00:00:00Z",
+            stl_path: null,
+            diseno_path: null,
+            diseno_url: null,
+            colores: null,
+            tiempo_estimado: null,
+            observacion_ayudante: null,
+            ayudante_id: null,
+            solicitante: null,
+        })
+
+        const res = await GET(getDetalleRequest(), { params })
+        const body = await res.json()
+
+        expect(res.status).toBe(200)
+        expect(body.archivo_url).toBeNull()
+        expect(mock.mockCreateSignedUrl).not.toHaveBeenCalled()
+    })
+
+    it("retorna archivo_url null (sin romper la respuesta) si createSignedUrl falla", async () => {
+        const { GET } = await import("@/app/api/solicitudes/[id]/route")
+        mock.setUser({ id: "u1" })
+        mock.queueFrom({ rol: "AYUDANTE" })
+        mock.queueFrom({
+            id: "s1",
+            tipo: "PERSONAL",
+            estado: "PENDIENTE",
+            comentario: null,
+            motivo_rechazo: null,
+            created_at: "2026-06-14T00:00:00Z",
+            stl_path: "modelos/borrado.stl",
+            diseno_path: null,
+            diseno_url: null,
+            colores: null,
+            tiempo_estimado: null,
+            observacion_ayudante: null,
+            ayudante_id: null,
+            solicitante: null,
+        })
+        mock.mockCreateSignedUrl.mockResolvedValue({ data: null, error: { message: "not found" } })
+
+        const res = await GET(getDetalleRequest(), { params })
+        const body = await res.json()
+
+        expect(res.status).toBe(200)
+        expect(body.archivo_url).toBeNull()
+    })
+})
 /* eslint-enable @typescript-eslint/naming-convention */

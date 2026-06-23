@@ -38,17 +38,43 @@ const solicitudesFixture = [
     },
 ]
 
+const detalleFixture = {
+    id: 's1',
+    tipo: 'PERSONAL',
+    estado: 'PENDIENTE',
+    comentario: 'Pieza de prueba para el detalle',
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    motivo_rechazo: null,
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    created_at: '2026-06-14T00:00:00Z',
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    diseno_path: null,
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    diseno_url: null,
+    colores: null,
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    tiempo_estimado: null,
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    observacion_ayudante: null,
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    archivo_url: 'https://example.com/signed/a.stl',
+    solicitante: { nombre: 'Benjamín', apellido: 'Silva' },
+}
+
 function mockFetchAyudante() {
     global.fetch = vi.fn((url: string | Request | URL, init?: RequestInit) => {
         const u = url.toString()
 
         if (u.includes('/api/solicitudes/')) {
-            const body = JSON.parse((init?.body as string) ?? '{}')
-            return Promise.resolve({
-                ok: true,
-                // eslint-disable-next-line @typescript-eslint/naming-convention
-                json: () => Promise.resolve({ id: 's1', estado: body.estado, motivo_rechazo: body.motivo_rechazo ?? null }),
-            })
+            if (init?.method === 'PATCH') {
+                const body = JSON.parse((init.body as string) ?? '{}')
+                return Promise.resolve({
+                    ok: true,
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
+                    json: () => Promise.resolve({ id: 's1', estado: body.estado, motivo_rechazo: body.motivo_rechazo ?? null }),
+                })
+            }
+            return Promise.resolve({ ok: true, json: () => Promise.resolve(detalleFixture) })
         }
 
         if (u.includes('/api/solicitudes')) {
@@ -69,7 +95,7 @@ function mockFetchAyudante() {
     }) as unknown as typeof fetch
 }
 
-describe('IMP-03/IMP-04: Dashboard Ayudante - Solicitudes reales', () => {
+describe('IMP-03/IMP-04/IMP-05: Dashboard Ayudante - Solicitudes reales', () => {
     beforeEach(() => {
         vi.restoreAllMocks()
     })
@@ -108,11 +134,25 @@ describe('IMP-03/IMP-04: Dashboard Ayudante - Solicitudes reales', () => {
         await waitFor(() => expect(global.fetch).toHaveBeenCalledWith('/api/solicitudes'))
     })
 
-    it('aprueba una solicitud pendiente con PATCH', async () => {
+    it('abre el modal de detalle al hacer clic en "Ver detalle" y muestra el comentario completo', async () => {
         mockFetchAyudante()
         render(<AyudantePage />)
 
         await waitFor(() => expect(screen.getByText('Benjamín Silva')).toBeInTheDocument())
+
+        fireEvent.click(screen.getAllByText('Ver detalle')[0])
+
+        await waitFor(() => expect(screen.getByText('Pieza de prueba para el detalle')).toBeInTheDocument())
+        expect(screen.getByText('Ver archivo STL')).toBeInTheDocument()
+    })
+
+    it('aprueba desde el modal y refresca la lista', async () => {
+        mockFetchAyudante()
+        render(<AyudantePage />)
+
+        await waitFor(() => expect(screen.getByText('Benjamín Silva')).toBeInTheDocument())
+        fireEvent.click(screen.getAllByText('Ver detalle')[0])
+        await waitFor(() => expect(screen.getByText('Pieza de prueba para el detalle')).toBeInTheDocument())
 
         fireEvent.click(screen.getByRole('button', { name: /aprobar/i }))
 
@@ -122,38 +162,7 @@ describe('IMP-03/IMP-04: Dashboard Ayudante - Solicitudes reales', () => {
                 expect.objectContaining({ method: 'PATCH' })
             )
         })
-    })
-
-    it('exige un motivo antes de rechazar', async () => {
-        mockFetchAyudante()
-        const alertaMock = vi.spyOn(window, 'alert').mockImplementation(() => {})
-        render(<AyudantePage />)
-
-        await waitFor(() => expect(screen.getByText('Benjamín Silva')).toBeInTheDocument())
-
-        fireEvent.click(screen.getByRole('button', { name: /rechazar/i }))
-
-        expect(alertaMock).toHaveBeenCalledWith('Debe ingresar un motivo para rechazar la solicitud')
-        alertaMock.mockRestore()
-    })
-
-    it('rechaza una solicitud con motivo y dispara el PATCH correspondiente', async () => {
-        mockFetchAyudante()
-        render(<AyudantePage />)
-
-        await waitFor(() => expect(screen.getByText('Benjamín Silva')).toBeInTheDocument())
-
-        fireEvent.change(screen.getByPlaceholderText('Motivo de rechazo'), {
-            target: { value: 'El modelo tiene errores estructurales' },
-        })
-        fireEvent.click(screen.getByRole('button', { name: /rechazar/i }))
-
-        await waitFor(() => {
-            expect(global.fetch).toHaveBeenCalledWith(
-                '/api/solicitudes/s1',
-                expect.objectContaining({ method: 'PATCH' })
-            )
-        })
+        await waitFor(() => expect(screen.queryByText('Pieza de prueba para el detalle')).not.toBeInTheDocument())
     })
 
     it('cambia a todas las pestañas correctamente', async () => {
