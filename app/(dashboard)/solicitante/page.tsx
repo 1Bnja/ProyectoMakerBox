@@ -1,45 +1,36 @@
 "use client"
 
-import { useState, type ChangeEvent, type FormEvent } from "react"
+import { useEffect, useState, type ChangeEvent, type FormEvent } from "react"
 import { getSupabaseClient } from "@/lib/supabase/client"
 import { validarDatosImpresion } from "@/lib/flujo/validacionesImpresion"
 import { StatusBadge } from "@/app/components/StatusBadge"
 import { DataTable, type Column } from "@/app/components/DataTable"
 import { DashboardShell } from "@/app/components/DashboardShell"
-import { Button } from "@/app/components/Button"
-
-/* ---------- mock history ---------- */
 
 interface SolicitudHist {
     id: string
-    nombre: string
+    tipo: string
     estado: string
-    fecha: string
+    comentario: string | null
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    created_at: string
 }
 
-const historial: SolicitudHist[] = [
-    { id: "S-001", nombre: "Engranaje", estado: "PENDIENTE", fecha: "2026-06-14" },
-    { id: "S-005", nombre: "Soporte Teléfono", estado: "APROBADA", fecha: "2026-06-10" },
-    { id: "S-008", nombre: "Base Lámpara", estado: "IMPRESA", fecha: "2026-05-28" },
-]
-
 const colsHistorial: Column<SolicitudHist>[] = [
-    { key: "id", header: "ID" },
-    { key: "nombre", header: "Nombre" },
+    {
+        key: "comentario",
+        header: "Comentario",
+        render: (s) => s.comentario ?? "—",
+    },
     {
         key: "estado",
         header: "Estado",
         render: (s) => <StatusBadge status={s.estado} />,
     },
-    { key: "fecha", header: "Fecha" },
     {
-        key: "detalle",
-        header: "",
-        render: () => (
-            <Button variant="outline" accent="pink">
-                Ver detalle
-            </Button>
-        ),
+        key: "created_at",
+        header: "Fecha",
+        render: (s) => new Date(s.created_at).toLocaleDateString("es-CL"),
     },
 ]
 
@@ -68,6 +59,32 @@ export default function SolicitantePage() {
         tipo: "exito" | "error"
         texto: string
     } | null>(null)
+
+    /* ---------- historial state ---------- */
+
+    const [historial, setHistorial] = useState<SolicitudHist[]>([])
+    const [loadingHistorial, setLoadingHistorial] = useState(true)
+    const [errorHistorial, setErrorHistorial] = useState("")
+
+    async function cargarHistorial() {
+        setLoadingHistorial(true)
+        setErrorHistorial("")
+        const res = await fetch("/api/solicitudes")
+        const data = await res.json()
+
+        if (!res.ok) {
+            setErrorHistorial(data.error ?? "No se pudo cargar tu historial de solicitudes")
+            setLoadingHistorial(false)
+            return
+        }
+
+        setHistorial(data)
+        setLoadingHistorial(false)
+    }
+
+    useEffect(() => {
+        cargarHistorial()
+    }, [])
 
     const handleInputChange = (
         e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -169,6 +186,7 @@ export default function SolicitantePage() {
             })
             setDatos({ nombre: "", descripcion: "", comentarios: "" })
             setArchivo(null)
+            cargarHistorial()
         } catch (error) {
             const message = error instanceof Error ? error.message : "Hubo un problema al procesar la solicitud."
             setMensaje({ tipo: "error", texto: message })
@@ -372,10 +390,19 @@ export default function SolicitantePage() {
                             <p className="mb-4 text-sm text-slate-500">
                                 Historial de tus solicitudes de impresión.
                             </p>
-                            <DataTable
-                                columns={colsHistorial}
-                                data={historial}
-                            />
+                            {errorHistorial && (
+                                <p className="mb-4 rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-700">{errorHistorial}</p>
+                            )}
+                            {loadingHistorial ? (
+                                <div className="flex items-center justify-center py-16 text-sm text-slate-500">
+                                    Cargando solicitudes...
+                                </div>
+                            ) : (
+                                <DataTable
+                                    columns={colsHistorial}
+                                    data={historial}
+                                />
+                            )}
                         </section>
                     )}
         </DashboardShell>

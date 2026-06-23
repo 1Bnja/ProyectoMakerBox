@@ -36,7 +36,7 @@ describe('useEstudiantes', () => {
         expect(result.current.cursos).toHaveLength(1)
     })
 
-    it('handleCrearEstudiante limpia el formulario y recarga la lista cuando la creación es exitosa', async () => {
+    it('handleGuardarEstudiante limpia el formulario y recarga la lista cuando la creación es exitosa', async () => {
         mockFetchSecuencia([
             { ok: true, data: [] },
             { ok: true, data: [] },
@@ -53,7 +53,7 @@ describe('useEstudiantes', () => {
         mockFetchSecuencia([{ ok: true, data: { success: true } }, { ok: true, data: [] }])
 
         await act(async () => {
-            await result.current.handleCrearEstudiante({
+            await result.current.handleGuardarEstudiante({
                 preventDefault: vi.fn(),
             } as unknown as React.FormEvent)
         })
@@ -63,7 +63,7 @@ describe('useEstudiantes', () => {
         expect(result.current.modalAbierto).toBe(false)
     })
 
-    it('handleCrearEstudiante muestra el error cuando la creación falla', async () => {
+    it('handleGuardarEstudiante muestra el error cuando la creación falla', async () => {
         mockFetchSecuencia([
             { ok: true, data: [] },
             { ok: true, data: [] },
@@ -75,13 +75,64 @@ describe('useEstudiantes', () => {
         mockFetchSecuencia([{ ok: false, data: { error: 'Email ya registrado' } }])
 
         await act(async () => {
-            await result.current.handleCrearEstudiante({
+            await result.current.handleGuardarEstudiante({
                 preventDefault: vi.fn(),
             } as unknown as React.FormEvent)
         })
 
         expect(result.current.form.error).toBe('Email ya registrado')
         expect(result.current.form.submitting).toBe(false)
+    })
+
+    it('abrirModalEditar precarga el formulario con los datos del estudiante', async () => {
+        mockFetchSecuencia([
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            { ok: true, data: [{ id: '1', nombre: 'Ana', apellido: 'Pérez', email: 'a@a.com', activo: true, curso_id: 'c1', cursos: { nombre: 'Curso 1' } }] },
+            { ok: true, data: [{ id: 'c1', nombre: 'Curso 1' }] },
+        ])
+
+        const { result } = renderHook(() => useEstudiantes())
+        await waitFor(() => expect(result.current.loading).toBe(false))
+
+        act(() => {
+            result.current.abrirModalEditar(result.current.estudiantes[0])
+        })
+
+        expect(result.current.editando).toBe(true)
+        expect(result.current.modalAbierto).toBe(true)
+        expect(result.current.form.nombre).toBe('Ana')
+        expect(result.current.form.apellido).toBe('Pérez')
+        expect(result.current.form.cursoId).toBe('c1')
+    })
+
+    it('handleGuardarEstudiante envía PATCH con nombre/apellido/curso_id cuando se está editando', async () => {
+        mockFetchSecuencia([
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            { ok: true, data: [{ id: '1', nombre: 'Ana', apellido: 'Pérez', email: 'a@a.com', activo: true, curso_id: null, cursos: null }] },
+            { ok: true, data: [] },
+        ])
+
+        const { result } = renderHook(() => useEstudiantes())
+        await waitFor(() => expect(result.current.loading).toBe(false))
+
+        act(() => {
+            result.current.abrirModalEditar(result.current.estudiantes[0])
+            result.current.form.setCursoId('c1')
+        })
+
+        mockFetchSecuencia([{ ok: true, data: {} }, { ok: true, data: [] }])
+
+        await act(async () => {
+            await result.current.handleGuardarEstudiante({
+                preventDefault: vi.fn(),
+            } as unknown as React.FormEvent)
+        })
+
+        expect(global.fetch).toHaveBeenCalledWith(
+            '/api/estudiantes/1',
+            expect.objectContaining({ method: 'PATCH' })
+        )
+        expect(result.current.modalAbierto).toBe(false)
     })
 
     it('handleToggleActivo recarga la lista cuando el PATCH es exitoso', async () => {
