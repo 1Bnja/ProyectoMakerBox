@@ -33,14 +33,22 @@ export function EstudiantesSection({
     const {
         estudiantes,
         cursos,
+        grupos,
         loading,
         modalAbierto,
+        modalGrupoAbierto,
         editando,
+        grupoLoading,
+        grupoExito,
+        grupoForm,
         form,
         abrirModalCrear,
         abrirModalEditar,
+        abrirModalGrupo,
         cerrarModal,
+        cerrarModalGrupo,
         handleGuardarEstudiante,
+        handleGuardarGrupo,
         handleToggleActivo,
     } = useEstudiantes()
 
@@ -57,6 +65,11 @@ export function EstudiantesSection({
             render: (e) => e.cursos?.nombre ?? "—",
         },
         {
+            key: "grupo",
+            header: "Grupo",
+            render: (e) => e.grupos?.nombre ?? "—",
+        },
+        {
             key: "estado",
             header: "Estado",
             render: (e) => <StatusBadge status={e.activo ? "Activo" : "Inactivo"} />,
@@ -69,6 +82,9 @@ export function EstudiantesSection({
                       header: "",
                       render: (e: Estudiante) => (
                           <div className="flex gap-2">
+                                  <Button variant="outline" accent={accent} onClick={() => abrirModalGrupo(e)}>
+                                      {e.grupos?.nombre ? "Cambiar grupo" : "Asignar grupo"}
+                                  </Button>
                               <Button variant="outline" accent={accent} onClick={() => abrirModalEditar(e)}>
                                   Editar
                               </Button>
@@ -99,6 +115,12 @@ export function EstudiantesSection({
                 </div>
             ) : (
                 <DataTable columns={columnas} data={estudiantes} />
+            )}
+
+            {grupoExito && (
+                <p className="mt-4 rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
+                    {grupoExito}
+                </p>
             )}
 
             {children}
@@ -173,6 +195,63 @@ export function EstudiantesSection({
                             </Button>
                             <Button type="submit" accent={accent} disabled={form.submitting}>
                                 {form.submitting ? "Guardando..." : editando ? "Guardar Cambios" : "Crear Estudiante"}
+                            </Button>
+                        </div>
+                    </form>
+                </Modal>
+            )}
+
+            {modalGrupoAbierto && grupoForm.estudiante && (
+                <Modal title="Asignar grupo">
+                    <form onSubmit={handleGuardarGrupo} className="space-y-4">
+                        <div className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">
+                            Estudiante: {grupoForm.estudiante.nombre} {grupoForm.estudiante.apellido}
+                            {grupoForm.estudiante.grupos?.nombre ? ` · Grupo actual: ${grupoForm.estudiante.grupos.nombre}` : ""}
+                        </div>
+
+                        <FormSelect
+                            label="Curso"
+                            accent={accent}
+                            required
+                            value={grupoForm.cursoId}
+                            onChange={(e) => grupoForm.setCursoId(e.target.value)}
+                        >
+                            <option value="">Selecciona un curso</option>
+                            {(grupoForm.estudiante.cursos_asociados ?? []).map((curso) => (
+                                <option key={curso.id} value={curso.id}>
+                                    {curso.nombre}
+                                </option>
+                            ))}
+                        </FormSelect>
+
+                        <FormSelect
+                            label="Grupo"
+                            accent={accent}
+                            required
+                            value={grupoForm.grupoId}
+                            onChange={(e) => grupoForm.setGrupoId(e.target.value)}
+                            disabled={!grupoForm.cursoId || grupoLoading}
+                        >
+                            <option value="">{grupoLoading ? "Cargando grupos..." : "Selecciona un grupo"}</option>
+                            {grupos.map((grupo) => (
+                                <option key={grupo.id} value={grupo.id}>
+                                    {grupo.nombre}
+                                </option>
+                            ))}
+                        </FormSelect>
+
+                        {grupoForm.error && (
+                            <p className="rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-700">
+                                {grupoForm.error}
+                            </p>
+                        )}
+
+                        <div className="flex justify-end gap-3">
+                            <Button type="button" variant="secondary" onClick={cerrarModalGrupo}>
+                                Cancelar
+                            </Button>
+                            <Button type="submit" accent={accent} disabled={grupoForm.submitting}>
+                                {grupoForm.submitting ? "Guardando..." : "Guardar grupo"}
                             </Button>
                         </div>
                     </form>

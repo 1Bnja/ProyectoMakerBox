@@ -120,15 +120,26 @@ describe('IMP-02: Formulario de Solicitud (Estudiante)', () => {
     vi.mocked(global.fetch).mockImplementation((url) => {
       const u = url.toString()
       if (u.includes('/api/cursos')) {
-        return Promise.resolve({ ok: false, text: () => Promise.resolve('Error de cursos') }) as unknown as Promise<Response>
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve([{ id: '11111111-1111-1111-1111-111111111111', nombre: 'Mock DB' }]),
+        }) as unknown as Promise<Response>
       }
-      return Promise.resolve({ ok: false, text: () => Promise.resolve('Error de grupos') }) as unknown as Promise<Response>
+      if (u.includes('/api/grupos?curso_id=11111111-1111-1111-1111-111111111111')) {
+        return Promise.resolve({ ok: false, text: () => Promise.resolve('Error de grupos') }) as unknown as Promise<Response>
+      }
+      return Promise.resolve({ ok: true, text: () => Promise.resolve('') }) as unknown as Promise<Response>
     })
 
     render(<FormularioSolicitudEstudiante onCancelar={() => {}} />)
 
     await waitFor(() => {
-      expect(consoleSpy).toHaveBeenCalledWith('Error cargando cursos:', 'Error de cursos')
+      expect(screen.getAllByRole('option').length).toBeGreaterThan(1)
+    })
+
+    await userEvent.selectOptions(screen.getByLabelText(/selecciona tu curso/i), '11111111-1111-1111-1111-111111111111')
+
+    await waitFor(() => {
       expect(consoleSpy).toHaveBeenCalledWith('Error cargando grupos:', 'Error de grupos')
     })
 

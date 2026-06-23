@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { EstudiantesSection } from '@/app/components/EstudiantesSection'
@@ -9,13 +10,16 @@ function mockFetchEstudiantesCursos() {
             return Promise.resolve({
                 ok: true,
                 json: () => Promise.resolve([
-                    // eslint-disable-next-line @typescript-eslint/naming-convention
-                    { id: '1', nombre: 'Ana', apellido: 'Pérez', email: 'ana@test.com', activo: true, curso_id: null, cursos: { nombre: 'Construcción de Software' } },
+                     
+                    { id: '1', nombre: 'Ana', apellido: 'Pérez', email: 'ana@test.com', activo: true, curso_id: 'c1', cursos: { nombre: 'Construcción de Software' }, cursos_asociados: [{ id: 'c1', nombre: 'Construcción de Software' }], grupos_asociados: [] },
                 ]),
             })
         }
         if (u.includes('/api/cursos')) {
             return Promise.resolve({ ok: true, json: () => Promise.resolve([{ id: 'c1', nombre: 'Curso 1' }]) })
+        }
+        if (u.includes('/api/grupos?curso_id=c1')) {
+            return Promise.resolve({ ok: true, json: () => Promise.resolve([{ id: 'g1', nombre: 'Grupo A', curso_id: 'c1' }]) })
         }
         return Promise.resolve({ ok: true, json: () => Promise.resolve({}) })
     }) as unknown as typeof fetch
@@ -28,7 +32,7 @@ describe('EstudiantesSection', () => {
 
     it('muestra el estado de carga inicialmente', () => {
         mockFetchEstudiantesCursos()
-        render(
+        const { container } = render(
             <EstudiantesSection
                 accent="purple"
                 descripcion="Gestión de estudiantes"
@@ -41,7 +45,7 @@ describe('EstudiantesSection', () => {
 
     it('muestra la tabla de estudiantes una vez cargados', async () => {
         mockFetchEstudiantesCursos()
-        render(
+        const { container } = render(
             <EstudiantesSection
                 accent="purple"
                 descripcion="Gestión de estudiantes"
@@ -58,7 +62,7 @@ describe('EstudiantesSection', () => {
 
     it('abre el modal de creación al hacer clic en el botón', async () => {
         mockFetchEstudiantesCursos()
-        render(
+        const { container } = render(
             <EstudiantesSection
                 accent="purple"
                 descripcion="Gestión de estudiantes"
@@ -76,7 +80,7 @@ describe('EstudiantesSection', () => {
 
     it('cierra el modal al hacer clic en Cancelar', async () => {
         mockFetchEstudiantesCursos()
-        render(
+        const { container } = render(
             <EstudiantesSection
                 accent="purple"
                 descripcion="Gestión de estudiantes"
@@ -207,5 +211,124 @@ describe('EstudiantesSection', () => {
         expect(apellidoInput).toHaveValue('González')
         expect(emailInput).toHaveValue('nueva@test.com')
         expect(cursoSelect).toHaveValue('c1')
+    })
+
+    it('carga grupos según el curso seleccionado al asignar grupo', async () => {
+        mockFetchEstudiantesCursos()
+        const { container } = render(
+            <EstudiantesSection
+                accent="purple"
+                descripcion="Gestión de estudiantes"
+                botonLabel="Agregar Estudiante"
+                modalTitle="Crear Estudiante"
+            />
+        )
+
+        await waitFor(() => expect(screen.getByText('Ana Pérez')).toBeInTheDocument())
+        fireEvent.click(screen.getByText('Asignar grupo'))
+
+        const cursoSelect = container.querySelectorAll('select')[0] as HTMLSelectElement
+        fireEvent.change(cursoSelect, { target: { value: 'c1' } })
+
+        await waitFor(() => {
+            expect(screen.getByText('Grupo A')).toBeInTheDocument()
+        })
+    })
+
+    it('envía curso_id y grupo_id correctamente al guardar la asignación', async () => {
+        const fetchMock = vi.fn((url: string | Request | URL, init?: RequestInit) => {
+            const u = url.toString()
+            if (u.includes('/api/estudiantes')) {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve([
+                        { id: '1', nombre: 'Ana', apellido: 'Pérez', email: 'ana@test.com', activo: true, curso_id: 'c1', cursos: { nombre: 'Construcción de Software' }, cursos_asociados: [{ id: 'c1', nombre: 'Construcción de Software' }], grupos_asociados: [] },
+                    ]),
+                })
+            }
+            if (u.includes('/api/cursos')) {
+                return Promise.resolve({ ok: true, json: () => Promise.resolve([{ id: 'c1', nombre: 'Curso 1' }]) })
+            }
+            if (u.includes('/api/grupos?curso_id=c1')) {
+                return Promise.resolve({ ok: true, json: () => Promise.resolve([{ id: 'g1', nombre: 'Grupo A', curso_id: 'c1' }]) })
+            }
+            if (u.includes('/api/estudiantes/1/grupo') && init?.method === 'PATCH') {
+                return Promise.resolve({ ok: true, json: () => Promise.resolve({ success: true }) })
+            }
+            return Promise.resolve({ ok: true, json: () => Promise.resolve({}) })
+        })
+        global.fetch = fetchMock as unknown as typeof fetch
+
+        const { container } = render(
+            <EstudiantesSection
+                accent="purple"
+                descripcion="Gestión de estudiantes"
+                botonLabel="Agregar Estudiante"
+                modalTitle="Crear Estudiante"
+            />
+        )
+
+        await waitFor(() => expect(screen.getByText('Ana Pérez')).toBeInTheDocument())
+        fireEvent.click(screen.getByText('Asignar grupo'))
+
+        fireEvent.change(container.querySelectorAll('select')[0], { target: { value: 'c1' } })
+        await waitFor(() => expect(screen.getByText('Grupo A')).toBeInTheDocument())
+        fireEvent.change(container.querySelectorAll('select')[1], { target: { value: 'g1' } })
+        fireEvent.click(screen.getByText('Guardar grupo'))
+
+        await waitFor(() => {
+            expect(fetchMock).toHaveBeenCalledWith(
+                '/api/estudiantes/1/grupo',
+                expect.objectContaining({
+                    method: 'PATCH',
+                    body: JSON.stringify({ curso_id: 'c1', grupo_id: 'g1' }),
+                })
+            )
+        })
+    })
+
+    it('muestra mensaje de éxito después de guardar', async () => {
+        const fetchMock = vi.fn((url: string | Request | URL, init?: RequestInit) => {
+            const u = url.toString()
+            if (u.includes('/api/estudiantes')) {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve([
+                        { id: '1', nombre: 'Ana', apellido: 'Pérez', email: 'ana@test.com', activo: true, curso_id: 'c1', cursos: { nombre: 'Construcción de Software' }, cursos_asociados: [{ id: 'c1', nombre: 'Construcción de Software' }], grupos_asociados: [] },
+                    ]),
+                })
+            }
+            if (u.includes('/api/cursos')) {
+                return Promise.resolve({ ok: true, json: () => Promise.resolve([{ id: 'c1', nombre: 'Curso 1' }]) })
+            }
+            if (u.includes('/api/grupos?curso_id=c1')) {
+                return Promise.resolve({ ok: true, json: () => Promise.resolve([{ id: 'g1', nombre: 'Grupo A', curso_id: 'c1' }]) })
+            }
+            if (u.includes('/api/estudiantes/1/grupo') && init?.method === 'PATCH') {
+                return Promise.resolve({ ok: true, json: () => Promise.resolve({ estudiante: {}, curso: {}, grupo: {} }) })
+            }
+            return Promise.resolve({ ok: true, json: () => Promise.resolve({}) })
+        })
+        global.fetch = fetchMock as unknown as typeof fetch
+
+        const { container } = render(
+            <EstudiantesSection
+                accent="purple"
+                descripcion="Gestión de estudiantes"
+                botonLabel="Agregar Estudiante"
+                modalTitle="Crear Estudiante"
+            />
+        )
+
+        await waitFor(() => expect(screen.getByText('Ana Pérez')).toBeInTheDocument())
+        fireEvent.click(screen.getByText('Asignar grupo'))
+        fireEvent.change(container.querySelectorAll('select')[0], { target: { value: 'c1' } })
+        await waitFor(() => expect(screen.getByText('Grupo A')).toBeInTheDocument())
+        fireEvent.change(container.querySelectorAll('select')[1], { target: { value: 'g1' } })
+        fireEvent.click(screen.getByText('Guardar grupo'))
+
+        await waitFor(() => {
+            expect(screen.getByText('Grupo asignado correctamente')).toBeInTheDocument()
+        })
     })
 })
