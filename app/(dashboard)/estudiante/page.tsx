@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { StatusBadge } from "@/app/components/StatusBadge"
 import { DataTable, type Column } from "@/app/components/DataTable"
 import { DashboardShell } from "@/app/components/DashboardShell"
@@ -11,10 +11,11 @@ import FormularioSolicitudEstudiante from './FormularioSolicitud'
 
 interface Solicitud {
     id: string
-    nombre: string
-    estado: string
-    fecha: string
     tipo: string
+    estado: string
+    comentario: string | null
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    created_at: string
 }
 
 interface Ayudantia {
@@ -24,12 +25,6 @@ interface Ayudantia {
     cupos: number
 }
 
-const solicitudes: Solicitud[] = [
-    { id: "S-001", nombre: "Engranaje", estado: "PENDIENTE", fecha: "2026-06-14", tipo: "Curso" },
-    { id: "S-005", nombre: "Soporte Teléfono", estado: "APROBADA", fecha: "2026-06-10", tipo: "Personal" },
-    { id: "S-007", nombre: "Caja Proyecto", estado: "IMPRESA", fecha: "2026-06-05", tipo: "Curso" },
-]
-
 const ayudantias: Ayudantia[] = [
     { curso: "Diseño 3D Avanzado", ayudante: "Lukas Avello", horario: "Lun 14:30-16:00", cupos: 5 },
     { curso: "Prototipado Rápido", ayudante: "Camila Rojas", horario: "Mié 10:00-11:30", cupos: 2 },
@@ -37,19 +32,21 @@ const ayudantias: Ayudantia[] = [
 ]
 
 const colsSolicitudes: Column<Solicitud>[] = [
-    { key: "id", header: "ID" },
-    { key: "nombre", header: "Nombre" },
+    {
+        key: "comentario",
+        header: "Comentario",
+        render: (s) => s.comentario ?? "—",
+    },
     { key: "tipo", header: "Tipo" },
     {
         key: "estado",
         header: "Estado",
         render: (s) => <StatusBadge status={s.estado} />,
     },
-    { key: "fecha", header: "Fecha" },
     {
-        key: "detalle",
-        header: "",
-        render: () => <Button variant="outline">Ver detalle</Button>,
+        key: "created_at",
+        header: "Fecha",
+        render: (s) => new Date(s.created_at).toLocaleDateString("es-CL"),
     },
 ]
 
@@ -75,6 +72,35 @@ const colsAyudantias: Column<Ayudantia>[] = [
 export default function EstudiantePage() {
     const [tab, setTab] = useState("solicitudes")
     const [mostrarModal, setMostrarModal] = useState(false)
+    const [solicitudes, setSolicitudes] = useState<Solicitud[]>([])
+    const [loadingSolicitudes, setLoadingSolicitudes] = useState(true)
+    const [errorSolicitudes, setErrorSolicitudes] = useState("")
+
+    async function cargarSolicitudes() {
+        setLoadingSolicitudes(true)
+        setErrorSolicitudes("")
+        const res = await fetch("/api/solicitudes")
+        const data = await res.json()
+
+        if (!res.ok) {
+            setErrorSolicitudes(data.error ?? "No se pudieron cargar tus solicitudes")
+            setLoadingSolicitudes(false)
+            return
+        }
+
+        setSolicitudes(data)
+        setLoadingSolicitudes(false)
+    }
+
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        cargarSolicitudes()
+    }, [])
+
+    function cerrarModal() {
+        setMostrarModal(false)
+        cargarSolicitudes()
+    }
 
     return (
         <DashboardShell rol="ESTUDIANTE" tab={tab} onTabChange={setTab} title={tab}>
@@ -83,7 +109,16 @@ export default function EstudiantePage() {
                     <SectionToolbar descripcion="Historial de tus solicitudes de impresión.">
                         <Button onClick={() => setMostrarModal(true)}>+ Nueva Solicitud</Button>
                     </SectionToolbar>
-                    <DataTable columns={colsSolicitudes} data={solicitudes} />
+                    {errorSolicitudes && (
+                        <p className="mb-4 rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-700">{errorSolicitudes}</p>
+                    )}
+                    {loadingSolicitudes ? (
+                        <div className="flex items-center justify-center py-16 text-sm text-slate-500">
+                            Cargando solicitudes...
+                        </div>
+                    ) : (
+                        <DataTable columns={colsSolicitudes} data={solicitudes} />
+                    )}
                 </section>
             )}
 
@@ -137,7 +172,7 @@ export default function EstudiantePage() {
             )}
             {mostrarModal && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-                <FormularioSolicitudEstudiante onCancelar={() => setMostrarModal(false)} />
+                <FormularioSolicitudEstudiante onCancelar={cerrarModal} />
             </div>
         )}
         </DashboardShell>

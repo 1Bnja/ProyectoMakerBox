@@ -77,14 +77,30 @@ describe("IMP-03 - Handlers reales de GET /api/solicitudes", () => {
         expect(res.status).toBe(401)
     })
 
-    it("retorna 403 si el usuario no es AYUDANTE", async () => {
+    it("retorna 403 si no se encuentra el perfil del usuario", async () => {
         const { GET } = await import("@/app/api/solicitudes/route")
         mock.setUser({ id: "u1" })
-        mock.queueFrom({ rol: "ESTUDIANTE" })
+        mock.queueFrom(null)
 
         const res = await GET(getRequest())
 
         expect(res.status).toBe(403)
+    })
+
+    it("un ESTUDIANTE solo ve sus propias solicitudes (filtra por user_id)", async () => {
+        const { GET } = await import("@/app/api/solicitudes/route")
+        mock.setUser({ id: "u1" })
+        mock.queueFrom({ rol: "ESTUDIANTE" })
+        mock.queueFrom([
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            { id: "s1", tipo: "ACADEMICA", estado: "PENDIENTE", user_id: "u1", solicitante: null },
+        ])
+
+        const res = await GET(getRequest())
+        const body = await res.json()
+
+        expect(res.status).toBe(200)
+        expect(body).toHaveLength(1)
     })
 
     it("retorna 500 si supabase falla", async () => {
