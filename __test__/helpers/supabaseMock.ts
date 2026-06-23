@@ -70,10 +70,30 @@ export function createMockSupabaseClient() {
 export function createMockAdminClient() {
     const createUser = vi.fn()
     const deleteUser = vi.fn()
+    const fromQueue: ReturnType<typeof chainable>[] = []
+    const mockFrom = vi.fn(() => {
+        const next = fromQueue.shift()
+        if (!next) {
+            throw new Error("createMockAdminClient: se llamó a .from() sin un resultado encolado")
+        }
+        return next
+    })
+
     const client = {
         auth: {
             admin: { createUser, deleteUser },
         },
+        from: mockFrom,
     }
-    return { client, createUser, deleteUser }
+
+    return {
+        client,
+        createUser,
+        deleteUser,
+        mockFrom,
+        /** Encola el resultado que devolverá la próxima llamada a .from(...) (en orden). */
+        queueFrom(data: unknown, error: { message: string } | null = null) {
+            fromQueue.push(chainable(data, error))
+        },
+    }
 }
