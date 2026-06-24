@@ -1,6 +1,32 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 import { NextResponse } from "next/server"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
+
+interface CursoRelacion {
+     
+    curso_id: string
+    cursos: { id: string; nombre: string } | null
+}
+
+interface GrupoRelacion {
+     
+    grupo_id: string
+    grupos: { id: string; nombre: string; curso_id: string } | null
+}
+
+interface EstudianteRow {
+    id: string
+    nombre: string
+    apellido: string
+    email: string
+    rol: string
+    activo: boolean
+     
+    curso_estudiantes: CursoRelacion[] | null
+     
+    grupo_estudiantes: GrupoRelacion[] | null
+}
 
 export async function POST(request: Request) {
     const supabase = await createSupabaseServerClient()
@@ -36,9 +62,9 @@ export async function POST(request: Request) {
     const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
         email,
         password,
-        // eslint-disable-next-line @typescript-eslint/naming-convention
+         
         email_confirm: true,
-        // eslint-disable-next-line @typescript-eslint/naming-convention
+         
         user_metadata: { nombre, apellido, rol: "ESTUDIANTE" },
     })
 
@@ -67,7 +93,7 @@ export async function POST(request: Request) {
     if (cursoId) {
         const { error: cursoEstudianteError } = await supabase
             .from("curso_estudiantes")
-            // eslint-disable-next-line @typescript-eslint/naming-convention
+             
             .insert([{ curso_id: cursoId, estudiante_id: authData.user.id }])
 
         if (cursoEstudianteError) {
@@ -82,7 +108,7 @@ export async function POST(request: Request) {
         email,
         rol: "ESTUDIANTE",
         activo: true,
-        // eslint-disable-next-line @typescript-eslint/naming-convention
+         
         curso_id: cursoId ?? null,
     })
 }
@@ -107,13 +133,14 @@ export async function GET(request: Request) {
     const url = new URL(request.url)
     const cursoId = url.searchParams.get("curso_id")
 
-    const cursoEstudiantesSelect = "curso_estudiantes(curso_id, cursos(nombre))"
+    const cursoEstudiantesSelect = "curso_estudiantes(curso_id, cursos(id, nombre))"
+    const grupoEstudiantesSelect = "grupo_estudiantes(grupo_id, grupos(id, nombre, curso_id))"
     let query = supabase
         .from("perfiles")
         .select(
             cursoId
-                ? `id, nombre, apellido, email, rol, activo, curso_estudiantes!inner(curso_id, cursos(nombre))`
-                : `id, nombre, apellido, email, rol, activo, ${cursoEstudiantesSelect}`
+                ? `id, nombre, apellido, email, rol, activo, curso_estudiantes!inner(curso_id, cursos(id, nombre)), ${grupoEstudiantesSelect}`
+                : `id, nombre, apellido, email, rol, activo, ${cursoEstudiantesSelect}, ${grupoEstudiantesSelect}`
         )
         .eq("rol", "ESTUDIANTE")
 
@@ -127,19 +154,9 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    interface EstudianteRow {
-        id: string
-        nombre: string
-        apellido: string
-        email: string
-        rol: string
-        activo: boolean
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        curso_estudiantes: { curso_id: string; cursos: { nombre: string } | null }[] | null
-    }
-
     const estudiantesPlanos = ((estudiantes ?? []) as unknown as EstudianteRow[]).map((e) => {
-        const relacion = e.curso_estudiantes?.[0] ?? null
+        const relacionCurso = e.curso_estudiantes?.[0] ?? null
+        const relacionGrupo = e.grupo_estudiantes?.[0] ?? null
         return {
             id: e.id,
             nombre: e.nombre,
@@ -147,9 +164,16 @@ export async function GET(request: Request) {
             email: e.email,
             rol: e.rol,
             activo: e.activo,
-            // eslint-disable-next-line @typescript-eslint/naming-convention
-            curso_id: relacion?.curso_id ?? null,
-            cursos: relacion?.cursos ?? null,
+             
+            curso_id: relacionCurso?.curso_id ?? null,
+            cursos: relacionCurso?.cursos ?? null,
+             
+            grupo_id: relacionGrupo?.grupo_id ?? null,
+            grupos: relacionGrupo?.grupos ?? null,
+             
+            cursos_asociados: (e.curso_estudiantes ?? []).map((relacion) => relacion.cursos).filter(Boolean),
+             
+            grupos_asociados: (e.grupo_estudiantes ?? []).map((relacion) => relacion.grupos).filter(Boolean),
         }
     })
 

@@ -1,5 +1,7 @@
 'use client'
 
+ 
+
 import { useState, useEffect, ChangeEvent, FormEvent } from 'react'
 import { getSupabaseClient } from '@/lib/supabase/client'
 
@@ -33,19 +35,38 @@ export default function FormularioSolicitudEstudiante({ onCancelar }: Formulario
       } else {
         console.error("Error cargando cursos:", await resCursos.text())
       }
-
-      const resGrupos = await fetch('/api/grupos')
-      if (resGrupos.ok) {
-        setListaGrupos(await resGrupos.json())
-      } else {
-        console.error("Error cargando grupos:", await resGrupos.text())
-      }
     }
     cargarDatos()
   }, [])
 
+  useEffect(() => {
+    const cargarGrupos = async () => {
+      if (!datos.curso_id) {
+        setListaGrupos([])
+        return
+      }
+
+      const resGrupos = await fetch(`/api/grupos?curso_id=${datos.curso_id}`)
+      if (resGrupos.ok) {
+        setListaGrupos(await resGrupos.json())
+      } else {
+        console.error("Error cargando grupos:", await resGrupos.text())
+        setListaGrupos([])
+      }
+    }
+
+    cargarGrupos()
+  }, [datos.curso_id])
+
   const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setDatos({ ...datos, [e.target.name]: e.target.value })
+    const value = e.target.value
+    setDatos((actual) => {
+      const siguiente = { ...actual, [e.target.name]: value }
+      if (e.target.name === 'curso_id') {
+        siguiente.grupo_id = ''
+      }
+      return siguiente
+    })
   }
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
