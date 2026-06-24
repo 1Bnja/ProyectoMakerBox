@@ -61,9 +61,42 @@ const detalleFixture = {
     solicitante: { nombre: 'Benjamín', apellido: 'Silva' },
 }
 
+const cursosFixture = [
+    {
+        id: 'c1',
+        nombre: 'Construcción de Software',
+        sigla: 'ICI-301',
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        semestre_id: null,
+        activo: true,
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        ayudante_id: null,
+        ayudante: null,
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        profesor_id: null,
+        profesor: null,
+        estudiantes: 5,
+    },
+]
+
 function mockFetchAyudante() {
     global.fetch = vi.fn((url: string | Request | URL, init?: RequestInit) => {
         const u = url.toString()
+
+        if (u.includes('/api/grupos?curso_id=c1')) {
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            return Promise.resolve({ ok: true, json: () => Promise.resolve([{ id: 'g1', nombre: 'Grupo A', curso_id: 'c1' }]) })
+        }
+        if (u.endsWith('/api/grupos') && init?.method === 'POST') {
+            return Promise.resolve({
+                ok: true,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                json: () => Promise.resolve({ id: 'g2', nombre: 'Grupo B', curso_id: 'c1' }),
+            })
+        }
+        if (u.includes('/api/cursos')) {
+            return Promise.resolve({ ok: true, json: () => Promise.resolve(cursosFixture) })
+        }
 
         if (u.includes('/api/solicitudes/')) {
             if (init?.method === 'PATCH') {
@@ -182,5 +215,35 @@ describe('IMP-03/IMP-04/IMP-05: Dashboard Ayudante - Solicitudes reales', () => 
 
         fireEvent.click(screen.getByText(/filamento/i))
         expect(screen.getByText('Registro de uso de filamento.')).toBeInTheDocument()
+    })
+
+    it('la pestaña Grupos permite ver y crear grupos de cualquier curso', async () => {
+        mockFetchAyudante()
+        const { container } = render(<AyudantePage />)
+
+        await waitFor(() => expect(screen.getByText('Benjamín Silva')).toBeInTheDocument())
+        fireEvent.click(screen.getByText('Grupos'))
+
+        await waitFor(() => expect(screen.getByText('Construcción de Software')).toBeInTheDocument())
+        const cursoSelect = container.querySelector('select') as HTMLSelectElement
+        fireEvent.change(cursoSelect, { target: { value: 'c1' } })
+
+        await waitFor(() => expect(screen.getByText('Grupo A')).toBeInTheDocument())
+
+        fireEvent.click(screen.getByText('+ Nuevo Grupo'))
+        fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Grupo B' } })
+        fireEvent.click(screen.getByText('Crear Grupo'))
+
+        await waitFor(() => {
+            expect(global.fetch).toHaveBeenCalledWith(
+                '/api/grupos',
+                expect.objectContaining({
+                    method: 'POST',
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
+                    body: JSON.stringify({ nombre: 'Grupo B', curso_id: 'c1' }),
+                })
+            )
+        })
+        await waitFor(() => expect(screen.getByText('Grupo B')).toBeInTheDocument())
     })
 })

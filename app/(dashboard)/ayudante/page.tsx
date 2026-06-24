@@ -7,6 +7,8 @@ import { DataTable, type Column } from "@/app/components/DataTable"
 import { DashboardShell } from "@/app/components/DashboardShell"
 import { EstudiantesSection } from "@/app/components/EstudiantesSection"
 import { CursosSection } from "@/app/components/CursosSection"
+import { GruposPorCursoSection } from "@/app/components/GruposPorCursoSection"
+import { useCursos } from "@/app/hooks/useCursos"
 import { SectionToolbar } from "@/app/components/SectionToolbar"
 import { FilterPill } from "@/app/components/FilterPill"
 import { Button } from "@/app/components/Button"
@@ -112,6 +114,7 @@ export default function AyudantePage() {
     const [loadingSolicitudes, setLoadingSolicitudes] = useState(true)
     const [errorSolicitudes, setErrorSolicitudes] = useState("")
     const [detalleId, setDetalleId] = useState<string | null>(null)
+    const { cursos } = useCursos()
 
     async function cargarSolicitudes(estado: string | null) {
         setLoadingSolicitudes(true)
@@ -241,6 +244,8 @@ export default function AyudantePage() {
                     modalTitle="Inscribir nuevo estudiante"
                 />
             )}
+
+            {tab === "grupos" && <GruposPorCursoSection accent="pink" cursos={cursos} />}
 
             {tab === "inventario" && (
                 <section>

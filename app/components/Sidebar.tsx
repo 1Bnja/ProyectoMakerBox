@@ -21,12 +21,16 @@ const items: Record<Rol, MenuItem[]> = {
         { id: "solicitudes", label: "Solicitudes", icon: <FileSvg /> },
         { id: "cursos", label: "Cursos", icon: <BookSvg /> },
         { id: "estudiantes", label: "Estudiantes", icon: <UsersSvg /> },
+        { id: "grupos", label: "Grupos", icon: <GroupSvg /> },
         { id: "inventario", label: "Inventario", icon: <BoxSvg /> },
         { id: "sala", label: "Disponibilidad Sala", icon: <CalendarSvg /> },
         { id: "filamento", label: "Registro Filamento", icon: <DropletSvg /> },
     ],
     PROFESOR: [
-        { id: "ayudantias", label: "Ayudantías", icon: <HatSvg /> },
+        { id: "cursos", label: "Cursos", icon: <BookSvg /> },
+        { id: "estudiantes", label: "Estudiantes", icon: <UsersSvg /> },
+        { id: "grupos", label: "Grupos", icon: <GroupSvg /> },
+        { id: "solicitudes", label: "Solicitudes", icon: <FileSvg /> },
         { id: "sala", label: "Reservar Sala", icon: <CalendarSvg /> },
     ],
     ESTUDIANTE: [
@@ -167,6 +171,17 @@ function DropletSvg() {
     return (
         <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-full w-full">
             <path d="M10 17.5a5.5 5.5 0 005.5-5.5c0-2.8-3.5-7.5-5.5-10-2 2.5-5.5 7.2-5.5 10a5.5 5.5 0 005.5 5.5z" />
+        </svg>
+    )
+}
+
+function GroupSvg() {
+    return (
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-full w-full">
+            <circle cx="7" cy="7" r="2.5" />
+            <circle cx="13.5" cy="8.5" r="2" />
+            <path d="M3 17v-1a4 4 0 014-4h0a4 4 0 014 4v1" />
+            <path d="M12 16v-.5a3 3 0 013-3h0a3 3 0 013 3V16" />
         </svg>
     )
 }

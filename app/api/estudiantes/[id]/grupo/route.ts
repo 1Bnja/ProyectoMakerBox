@@ -27,7 +27,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
     const { data: perfil } = await supabase.from("perfiles").select("rol").eq("id", user.id).single()
 
-    if (!perfil || perfil.rol !== "AYUDANTE") {
+    if (!perfil || (perfil.rol !== "AYUDANTE" && perfil.rol !== "PROFESOR")) {
         return NextResponse.json({ error: "No tienes permisos para asignar grupos" }, { status: 403 })
     }
 
@@ -53,12 +53,16 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
     const { data: curso, error: cursoError } = await supabase
         .from("cursos")
-        .select("id, nombre")
+        .select("id, nombre, profesor_id")
         .eq("id", cursoId)
         .single()
 
     if (cursoError || !curso) {
         return NextResponse.json({ error: "Curso no encontrado" }, { status: 404 })
+    }
+
+    if (perfil.rol === "PROFESOR" && curso.profesor_id !== user.id) {
+        return NextResponse.json({ error: "Solo puedes asignar grupos en tus propios cursos" }, { status: 403 })
     }
 
     const { data: grupo, error: grupoError } = await supabase

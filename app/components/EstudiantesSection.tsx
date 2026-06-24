@@ -74,29 +74,29 @@ export function EstudiantesSection({
             header: "Estado",
             render: (e) => <StatusBadge status={e.activo ? "Activo" : "Inactivo"} />,
         },
-        ...(soloLectura
-            ? []
-            : [
-                  {
-                      key: "acciones",
-                      header: "",
-                      render: (e: Estudiante) => (
-                          <div className="flex gap-2">
-                                  <Button variant="outline" accent={accent} onClick={() => abrirModalGrupo(e)}>
-                                      {e.grupos?.nombre ? "Cambiar grupo" : "Asignar grupo"}
-                                  </Button>
-                              <Button variant="outline" accent={accent} onClick={() => abrirModalEditar(e)}>
-                                  Editar
-                              </Button>
-                              <ActivoToggle
-                                  activo={e.activo}
-                                  labels={["Retirar", "Reactivar"]}
-                                  onClick={() => handleToggleActivo(e)}
-                              />
-                          </div>
-                      ),
-                  } satisfies Column<Estudiante>,
-              ]),
+        {
+            key: "acciones",
+            header: "",
+            render: (e: Estudiante) => (
+                <div className="flex gap-2">
+                    <Button variant="outline" accent={accent} onClick={() => abrirModalGrupo(e)}>
+                        {e.grupos?.nombre ? "Cambiar grupo" : "Asignar grupo"}
+                    </Button>
+                    {!soloLectura && (
+                        <>
+                            <Button variant="outline" accent={accent} onClick={() => abrirModalEditar(e)}>
+                                Editar
+                            </Button>
+                            <ActivoToggle
+                                activo={e.activo}
+                                labels={["Retirar", "Reactivar"]}
+                                onClick={() => handleToggleActivo(e)}
+                            />
+                        </>
+                    )}
+                </div>
+            ),
+        } satisfies Column<Estudiante>,
     ]
 
     return (

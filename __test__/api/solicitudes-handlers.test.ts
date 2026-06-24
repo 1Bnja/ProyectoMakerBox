@@ -129,6 +129,53 @@ describe("IMP-03 - Handlers reales de GET /api/solicitudes", () => {
         expect(body[0].solicitante.nombre).toBe("Ana")
     })
 
+    it("un PROFESOR ve las solicitudes de los estudiantes de sus cursos", async () => {
+        const { GET } = await import("@/app/api/solicitudes/route")
+        mock.setUser({ id: "p1" })
+        mock.queueFrom({ rol: "PROFESOR" })
+        mock.queueFrom([{ id: "c1" }])
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        mock.queueFrom([{ estudiante_id: "e1" }, { estudiante_id: "e2" }])
+        mock.queueFrom([
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            { id: "s1", tipo: "ACADEMICA", estado: "PENDIENTE", user_id: "e1", solicitante: { nombre: "Ana", apellido: "Soto" } },
+        ])
+
+        const res = await GET(getRequest())
+        const body = await res.json()
+
+        expect(res.status).toBe(200)
+        expect(body).toHaveLength(1)
+        expect(body[0].user_id).toBe("e1")
+    })
+
+    it("un PROFESOR sin cursos asignados recibe una lista vacía", async () => {
+        const { GET } = await import("@/app/api/solicitudes/route")
+        mock.setUser({ id: "p1" })
+        mock.queueFrom({ rol: "PROFESOR" })
+        mock.queueFrom([])
+
+        const res = await GET(getRequest())
+        const body = await res.json()
+
+        expect(res.status).toBe(200)
+        expect(body).toEqual([])
+    })
+
+    it("un PROFESOR con cursos pero sin estudiantes inscritos recibe una lista vacía", async () => {
+        const { GET } = await import("@/app/api/solicitudes/route")
+        mock.setUser({ id: "p1" })
+        mock.queueFrom({ rol: "PROFESOR" })
+        mock.queueFrom([{ id: "c1" }])
+        mock.queueFrom([])
+
+        const res = await GET(getRequest())
+        const body = await res.json()
+
+        expect(res.status).toBe(200)
+        expect(body).toEqual([])
+    })
+
     it("filtra por estado cuando se pasa como query param", async () => {
         const { GET } = await import("@/app/api/solicitudes/route")
         mock.setUser({ id: "u1" })

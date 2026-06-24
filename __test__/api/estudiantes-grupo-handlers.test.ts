@@ -28,14 +28,45 @@ describe("USR-02 - Handlers reales de /api/estudiantes/[id]/grupo", () => {
         expect(res.status).toBe(401)
     })
 
-    it("retorna 403 si el usuario no es AYUDANTE", async () => {
+    it("retorna 403 si el usuario no es AYUDANTE ni PROFESOR", async () => {
         const { PATCH } = await import("@/app/api/estudiantes/[id]/grupo/route")
         mock.setUser({ id: "u1" })
-        mock.queueFrom({ rol: "PROFESOR" })
+        mock.queueFrom({ rol: "ESTUDIANTE" })
 
         const res = await PATCH(patchRequest({ curso_id: "c1", grupo_id: "g1" }), { params })
 
         expect(res.status).toBe(403)
+    })
+
+    it("retorna 403 si un PROFESOR intenta asignar un grupo en un curso que no es suyo", async () => {
+        const { PATCH } = await import("@/app/api/estudiantes/[id]/grupo/route")
+        mock.setUser({ id: "p1" })
+        mock.queueFrom({ rol: "PROFESOR" })
+        mock.queueFrom({ id: "e1", nombre: "Ana", apellido: "Soto", email: "a@a.cl", rol: "ESTUDIANTE", activo: true })
+        mock.queueFrom({ id: "c1", nombre: "Curso 1", profesor_id: "otro-profesor" })
+
+        const res = await PATCH(patchRequest({ curso_id: "c1", grupo_id: "g1" }), { params })
+
+        expect(res.status).toBe(403)
+    })
+
+    it("permite a un PROFESOR asignar un grupo en su propio curso", async () => {
+        const { PATCH } = await import("@/app/api/estudiantes/[id]/grupo/route")
+        mock.setUser({ id: "p1" })
+        mock.queueFrom({ rol: "PROFESOR" })
+        mock.queueFrom({ id: "e1", nombre: "Ana", apellido: "Soto", email: "a@a.cl", rol: "ESTUDIANTE", activo: true })
+        mock.queueFrom({ id: "c1", nombre: "Curso 1", profesor_id: "p1" })
+        mock.queueFrom({ id: "g1", nombre: "Grupo 1", curso_id: "c1" })
+        mock.queueFrom({ curso_id: "c1" })
+        mock.queueFrom([{ id: "g1" }, { id: "g2" }])
+        mock.queueFrom([])
+        mock.queueFrom(null)
+
+        const res = await PATCH(patchRequest({ curso_id: "c1", grupo_id: "g1" }), { params })
+        const body = await res.json()
+
+        expect(res.status).toBe(200)
+        expect(body.grupo.id).toBe("g1")
     })
 
     it("retorna 400 si faltan curso_id o grupo_id", async () => {
