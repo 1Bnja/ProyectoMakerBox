@@ -46,9 +46,12 @@ export function createMockSupabaseClient() {
         },
         from: mockFrom,
         storage: {
-            from: vi.fn((_bucket: string) => ({
-                createSignedUrl: mockCreateSignedUrl,
-            })),
+            from: vi.fn((bucket: string) => {
+                void bucket
+                return {
+                    createSignedUrl: mockCreateSignedUrl,
+                }
+            }),
         },
     }
 

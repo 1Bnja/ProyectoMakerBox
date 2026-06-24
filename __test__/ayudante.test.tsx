@@ -117,6 +117,10 @@ function mockFetchAyudante() {
             return Promise.resolve({ ok: true, json: () => Promise.resolve(data) })
         }
 
+        if (u.includes('/api/articulos')) {
+            return Promise.resolve({ ok: true, json: () => Promise.resolve([]) })
+        }
+
         if (u.includes('/api/auth/me')) {
             return Promise.resolve({
                 ok: true,
