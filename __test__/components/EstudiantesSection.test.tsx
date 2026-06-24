@@ -331,4 +331,25 @@ describe('EstudiantesSection', () => {
             expect(screen.getByText('Grupo asignado correctamente')).toBeInTheDocument()
         })
     })
+
+    it('en modo soloLectura muestra "Asignar grupo" pero no "Editar" ni "Retirar"', async () => {
+        mockFetchEstudiantesCursos()
+        render(
+            <EstudiantesSection
+                accent="purple"
+                descripcion="Estudiantes de mis cursos"
+                botonLabel="Agregar Estudiante"
+                modalTitle="Crear Estudiante"
+                soloLectura
+            />
+        )
+
+        await waitFor(() => expect(screen.getByText('Ana Pérez')).toBeInTheDocument())
+
+        expect(screen.getByText('Asignar grupo')).toBeInTheDocument()
+        expect(screen.queryByText('Editar')).not.toBeInTheDocument()
+        expect(screen.queryByText('Retirar')).not.toBeInTheDocument()
+        expect(screen.queryByText('Agregar Estudiante')).not.toBeInTheDocument()
+    })
+
 })

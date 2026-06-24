@@ -26,6 +26,7 @@ describe("CUR-01 - Handlers reales de /api/cursos", () => {
         it("retorna 500 si supabase falla", async () => {
             const { GET } = await import("@/app/api/cursos/route")
             mock.setUser({ id: "u1" })
+            mock.queueFrom({ rol: "AYUDANTE" })
             mock.queueFrom(null, { message: "db error" })
 
             const res = await GET()
@@ -36,6 +37,7 @@ describe("CUR-01 - Handlers reales de /api/cursos", () => {
         it("retorna la lista de cursos aplanando el conteo de estudiantes", async () => {
             const { GET } = await import("@/app/api/cursos/route")
             mock.setUser({ id: "u1" })
+            mock.queueFrom({ rol: "AYUDANTE" })
             mock.queueFrom([
                 {
                     id: "c1",
@@ -57,6 +59,32 @@ describe("CUR-01 - Handlers reales de /api/cursos", () => {
             expect(res.status).toBe(200)
             expect(body[0].estudiantes).toBe(5)
             expect(body[0].nombre).toBe("Curso 1")
+        })
+
+        it("filtra por profesor_id cuando el usuario es PROFESOR", async () => {
+            const { GET } = await import("@/app/api/cursos/route")
+            mock.setUser({ id: "p1" })
+            mock.queueFrom({ rol: "PROFESOR" })
+            mock.queueFrom([
+                {
+                    id: "c1",
+                    nombre: "Curso 1",
+                    sigla: "ING-101",
+                    semestre_id: null,
+                    activo: true,
+                    ayudante_id: null,
+                    ayudante: null,
+                    profesor_id: "p1",
+                    profesor: { nombre: "Rodrigo", apellido: "Pavez" },
+                    estudiantes: [{ count: 3 }],
+                },
+            ])
+
+            const res = await GET()
+            const body = await res.json()
+
+            expect(res.status).toBe(200)
+            expect(body[0].profesor_id).toBe("p1")
         })
     })
 

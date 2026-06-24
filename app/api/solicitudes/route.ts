@@ -59,13 +59,41 @@ export async function GET(request: Request) {
     const url = new URL(request.url)
     const estado = url.searchParams.get("estado")
     const esAyudante = perfil.rol === "AYUDANTE"
+    const esProfesor = perfil.rol === "PROFESOR"
+
+    let estudianteIds: string[] = []
+    if (esProfesor) {
+        const { data: cursos } = await supabase
+            .from("cursos")
+            .select("id")
+            .eq("profesor_id", user.id)
+
+        const cursoIds = (cursos ?? []).map((c) => c.id)
+
+        if (cursoIds.length === 0) {
+            return NextResponse.json([])
+        }
+
+        const { data: relaciones } = await supabase
+            .from("curso_estudiantes")
+            .select("estudiante_id")
+            .in("curso_id", cursoIds)
+
+        estudianteIds = (relaciones ?? []).map((r) => r.estudiante_id)
+
+        if (estudianteIds.length === 0) {
+            return NextResponse.json([])
+        }
+    }
 
     let query = supabase
         .from("impresiones")
         .select("id, tipo, estado, comentario, motivo_rechazo, created_at, user_id, solicitante:user_id(nombre, apellido)")
         .order("created_at", { ascending: false })
 
-    if (!esAyudante) {
+    if (esProfesor) {
+        query = query.in("user_id", estudianteIds)
+    } else if (!esAyudante) {
         query = query.eq("user_id", user.id)
     }
 

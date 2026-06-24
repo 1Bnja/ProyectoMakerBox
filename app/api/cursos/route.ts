@@ -24,12 +24,24 @@ export async function GET() {
         return NextResponse.json({ error: "No autorizado" }, { status: 401 })
     }
 
-    const { data: cursos, error } = await supabase
+    const { data: perfil } = await supabase
+        .from("perfiles")
+        .select("rol")
+        .eq("id", user.id)
+        .single()
+
+    let query = supabase
         .from("cursos")
         .select(
             "id, nombre, sigla, semestre_id, activo, ayudante_id, ayudante:ayudante_id(nombre, apellido), profesor_id, profesor:profesor_id(nombre, apellido), estudiantes:curso_estudiantes(count)"
         )
         .order("nombre", { ascending: true })
+
+    if (perfil?.rol === "PROFESOR") {
+        query = query.eq("profesor_id", user.id)
+    }
+
+    const { data: cursos, error } = await query
 
     if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 })
