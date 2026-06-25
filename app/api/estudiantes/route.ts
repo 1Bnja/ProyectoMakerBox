@@ -2,6 +2,8 @@
 import { NextResponse } from "next/server"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
+import { requireRol, requireUsuario } from "@/lib/auth/requireRol"
+import { crearUsuarioConPerfil } from "@/lib/auth/crearUsuario"
 
 interface CursoRelacion {
      
@@ -30,20 +32,11 @@ interface EstudianteRow {
 
 export async function POST(request: Request) {
     const supabase = await createSupabaseServerClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-        return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-    }
+    const { error: authError, user } = await requireUsuario(supabase)
+    if (authError) return authError
 
-    const { data: perfil } = await supabase
-        .from("perfiles")
-        .select("rol")
-        .eq("id", user.id)
-        .single()
-
-    if (!perfil || perfil.rol !== "AYUDANTE") {
-        return NextResponse.json({ error: "No tienes permisos para crear estudiantes" }, { status: 403 })
-    }
+    const { error: rolError } = await requireRol(supabase, user, ["AYUDANTE"], "No tienes permisos para crear estudiantes")
+    if (rolError) return rolError
 
     const body = await request.json()
     const bodyRecord = body as Record<string, unknown>
@@ -58,43 +51,17 @@ export async function POST(request: Request) {
     }
 
     const adminClient = createSupabaseAdminClient()
+    const resultado = await crearUsuarioConPerfil(adminClient, supabase, { email, password, nombre, apellido, rol: "ESTUDIANTE" })
 
-    const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
-        email,
-        password,
-         
-        email_confirm: true,
-         
-        user_metadata: { nombre, apellido, rol: "ESTUDIANTE" },
-    })
-
-    if (authError) {
-        return NextResponse.json({ error: authError.message }, { status: 500 })
-    }
-
-    const estudianteData: Record<string, unknown> = {
-        id: authData.user.id,
-        nombre,
-        apellido,
-        email,
-        rol: "ESTUDIANTE",
-        activo: true,
-    }
-
-    const { error: perfilError } = await supabase
-        .from("perfiles")
-        .insert([estudianteData])
-
-    if (perfilError) {
-        await adminClient.auth.admin.deleteUser(authData.user.id)
-        return NextResponse.json({ error: perfilError.message }, { status: 500 })
+    if (resultado.error !== undefined) {
+        return NextResponse.json({ error: resultado.error }, { status: 500 })
     }
 
     if (cursoId) {
         const { error: cursoEstudianteError } = await supabase
             .from("curso_estudiantes")
-             
-            .insert([{ curso_id: cursoId, estudiante_id: authData.user.id }])
+
+            .insert([{ curso_id: cursoId, estudiante_id: resultado.usuario.id }])
 
         if (cursoEstudianteError) {
             return NextResponse.json({ error: cursoEstudianteError.message }, { status: 500 })
@@ -102,33 +69,19 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({
-        id: authData.user.id,
-        nombre,
-        apellido,
-        email,
-        rol: "ESTUDIANTE",
-        activo: true,
-         
+        ...resultado.usuario,
+
         curso_id: cursoId ?? null,
     })
 }
 
 export async function GET(request: Request) {
     const supabase = await createSupabaseServerClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-        return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-    }
+    const { error: authError, user } = await requireUsuario(supabase)
+    if (authError) return authError
 
-    const { data: perfil } = await supabase
-        .from("perfiles")
-        .select("rol")
-        .eq("id", user.id)
-        .single()
-
-    if (!perfil || (perfil.rol !== "PROFESOR" && perfil.rol !== "AYUDANTE" && perfil.rol !== "ADMIN")) {
-        return NextResponse.json({ error: "No tienes permisos para ver estudiantes" }, { status: 403 })
-    }
+    const { error: rolError } = await requireRol(supabase, user, ["PROFESOR", "AYUDANTE", "ADMIN"], "No tienes permisos para ver estudiantes")
+    if (rolError) return rolError
 
     const url = new URL(request.url)
     const cursoId = url.searchParams.get("curso_id")

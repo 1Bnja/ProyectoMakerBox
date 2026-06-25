@@ -1,22 +1,14 @@
 import { NextResponse } from "next/server"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
+import { requireRol, requireUsuario } from "@/lib/auth/requireRol"
 
 export async function POST(request: Request) {
     const supabase = await createSupabaseServerClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-        return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-    }
+    const { error: authError, user } = await requireUsuario(supabase)
+    if (authError) return authError
 
-    const { data: perfil } = await supabase
-        .from("perfiles")
-        .select("rol")
-        .eq("id", user.id)
-        .single()
-
-    if (!perfil || (perfil.rol !== "AYUDANTE" && perfil.rol !== "PROFESOR")) {
-        return NextResponse.json({ error: "No tienes permisos para crear grupos" }, { status: 403 })
-    }
+    const { error: rolError, rol } = await requireRol(supabase, user, ["AYUDANTE", "PROFESOR"], "No tienes permisos para crear grupos")
+    if (rolError) return rolError
 
     const body = await request.json()
     const bodyRecord = body as Record<string, unknown>
@@ -38,7 +30,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Curso no encontrado" }, { status: 404 })
     }
 
-    if (perfil.rol === "PROFESOR" && curso.profesor_id !== user.id) {
+    if (rol === "PROFESOR" && curso.profesor_id !== user.id) {
         return NextResponse.json({ error: "Solo puedes crear grupos en tus propios cursos" }, { status: 403 })
     }
 
@@ -59,10 +51,8 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
     const supabase = await createSupabaseServerClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-        return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-    }
+    const { error: authError } = await requireUsuario(supabase)
+    if (authError) return authError
 
     const url = new URL(request.url)
     const cursoId = url.searchParams.get("curso_id")

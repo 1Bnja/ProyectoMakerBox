@@ -1,24 +1,15 @@
 import { NextResponse } from "next/server"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
-
-const rolesPermitidos = ["AYUDANTE", "PROFESOR"]
+import { requireRol, requireUsuario } from "@/lib/auth/requireRol"
+import { rolesGestionables } from "@/lib/auth/roles"
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
     const supabase = await createSupabaseServerClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-        return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-    }
+    const { error: authError, user } = await requireUsuario(supabase)
+    if (authError) return authError
 
-    const { data: perfil } = await supabase
-        .from("perfiles")
-        .select("rol")
-        .eq("id", user.id)
-        .single()
-
-    if (!perfil || (perfil.rol !== "ADMIN" && perfil.rol !== "AYUDANTE")) {
-        return NextResponse.json({ error: "No tienes permisos para editar usuarios" }, { status: 403 })
-    }
+    const { error: rolError, rol } = await requireRol(supabase, user, ["ADMIN", "AYUDANTE"], "No tienes permisos para editar usuarios")
+    if (rolError) return rolError
 
     const { id } = await params
     const body = await request.json()
@@ -32,7 +23,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         return NextResponse.json({ error: "No hay campos para actualizar" }, { status: 400 })
     }
 
-    const rolesEditables = perfil.rol === "AYUDANTE" ? ["PROFESOR"] : rolesPermitidos
+    const rolesEditables = rol === "AYUDANTE" ? ["PROFESOR"] : rolesGestionables
 
     const { data, error } = await supabase
         .from("perfiles")

@@ -1,25 +1,17 @@
 import { NextResponse } from "next/server"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
-
-const rolesPermitidos = ["AYUDANTE", "PROFESOR"] as const
+import { requireRol, requireUsuario } from "@/lib/auth/requireRol"
+import { crearUsuarioConPerfil } from "@/lib/auth/crearUsuario"
+import { rolesGestionables, type Rol } from "@/lib/auth/roles"
 
 export async function POST(request: Request) {
     const supabase = await createSupabaseServerClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-        return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-    }
+    const { error: authError, user } = await requireUsuario(supabase)
+    if (authError) return authError
 
-    const { data: perfil } = await supabase
-        .from("perfiles")
-        .select("rol")
-        .eq("id", user.id)
-        .single()
-
-    if (!perfil || (perfil.rol !== "ADMIN" && perfil.rol !== "AYUDANTE")) {
-        return NextResponse.json({ error: "No tienes permisos para gestionar usuarios" }, { status: 403 })
-    }
+    const { error: rolError, rol: rolDeQuienCrea } = await requireRol(supabase, user, ["ADMIN", "AYUDANTE"], "No tienes permisos para gestionar usuarios")
+    if (rolError) return rolError
 
     const body = await request.json()
     const bodyRecord = body as Record<string, unknown>
@@ -35,77 +27,35 @@ export async function POST(request: Request) {
         }, { status: 400 })
     }
 
-    if (!rolesPermitidos.includes(rol as typeof rolesPermitidos[number])) {
+    if (!rolesGestionables.includes(rol as Rol)) {
         return NextResponse.json({
-            error: `Rol inválido. Debe ser: ${rolesPermitidos.join(" o ")}`,
+            error: `Rol inválido. Debe ser: ${rolesGestionables.join(" o ")}`,
         }, { status: 400 })
     }
 
-    if (perfil.rol === "AYUDANTE" && rol !== "PROFESOR") {
+    if (rolDeQuienCrea === "AYUDANTE" && rol !== "PROFESOR") {
         return NextResponse.json({ error: "Como ayudante solo puedes crear profesores" }, { status: 403 })
     }
 
     const adminClient = createSupabaseAdminClient()
+    const resultado = await crearUsuarioConPerfil(adminClient, supabase, { email, password, nombre, apellido, rol: rol as Rol })
 
-    const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
-        email,
-        password,
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        email_confirm: true,
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        user_metadata: { nombre, apellido, rol },
-    })
-
-    if (authError) {
-        return NextResponse.json({ error: authError.message }, { status: 500 })
+    if (resultado.error !== undefined) {
+        return NextResponse.json({ error: resultado.error }, { status: 500 })
     }
 
-    const usuarioData: Record<string, unknown> = {
-        id: authData.user.id,
-        nombre,
-        apellido,
-        email,
-        rol,
-        activo: true,
-    }
-
-    const { error: perfilError } = await supabase
-        .from("perfiles")
-        .insert([usuarioData])
-
-    if (perfilError) {
-        await adminClient.auth.admin.deleteUser(authData.user.id)
-        return NextResponse.json({ error: perfilError.message }, { status: 500 })
-    }
-
-    return NextResponse.json({
-        id: authData.user.id,
-        nombre,
-        apellido,
-        email,
-        rol,
-        activo: true,
-    })
+    return NextResponse.json(resultado.usuario)
 }
 
 export async function GET() {
     const supabase = await createSupabaseServerClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-        return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-    }
+    const { error: authError, user } = await requireUsuario(supabase)
+    if (authError) return authError
 
-    const { data: perfil } = await supabase
-        .from("perfiles")
-        .select("rol")
-        .eq("id", user.id)
-        .single()
+    const { error: rolError, rol } = await requireRol(supabase, user, ["ADMIN", "AYUDANTE"], "No tienes permisos para ver usuarios")
+    if (rolError) return rolError
 
-    if (!perfil || (perfil.rol !== "ADMIN" && perfil.rol !== "AYUDANTE")) {
-        return NextResponse.json({ error: "No tienes permisos para ver usuarios" }, { status: 403 })
-    }
-
-    const rolesVisibles = perfil.rol === "AYUDANTE" ? ["PROFESOR"] : rolesPermitidos
+    const rolesVisibles = rol === "AYUDANTE" ? ["PROFESOR"] : rolesGestionables
 
     const { data: usuarios, error } = await supabase
         .from("perfiles")

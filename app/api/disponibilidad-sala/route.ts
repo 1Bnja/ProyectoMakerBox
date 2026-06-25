@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
-import { obtenerDiaDeFecha } from "@/lib/sala/diasSemana"
+import { esFechaValida, obtenerDiaDeFecha } from "@/lib/sala/diasSemana"
+import { requireRol, requireUsuario } from "@/lib/auth/requireRol"
 
 interface BloqueRow {
     id: string
@@ -14,10 +15,8 @@ interface BloqueRow {
 
 export async function GET(request: Request) {
     const supabase = await createSupabaseServerClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-        return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-    }
+    const { error: authError, user } = await requireUsuario(supabase)
+    if (authError) return authError
 
     const url = new URL(request.url)
     const fecha = url.searchParams.get("fecha")
@@ -37,21 +36,13 @@ export async function GET(request: Request) {
         return NextResponse.json(data)
     }
 
-    const fechaDate = new Date(`${fecha}T00:00:00Z`)
-    if (Number.isNaN(fechaDate.getTime())) {
+    if (!esFechaValida(fecha)) {
         return NextResponse.json({ error: "Fecha inválida" }, { status: 400 })
     }
 
     if (vista === "gestion") {
-        const { data: perfil } = await supabase
-            .from("perfiles")
-            .select("rol")
-            .eq("id", user.id)
-            .single()
-
-        if (!perfil || perfil.rol !== "AYUDANTE") {
-            return NextResponse.json({ error: "No tienes permisos para gestionar la disponibilidad de la sala" }, { status: 403 })
-        }
+        const { error: rolError } = await requireRol(supabase, user, ["AYUDANTE"], "No tienes permisos para gestionar la disponibilidad de la sala")
+        if (rolError) return rolError
     }
 
     const dia = obtenerDiaDeFecha(fecha)
