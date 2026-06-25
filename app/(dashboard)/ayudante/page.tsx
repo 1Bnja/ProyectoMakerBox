@@ -9,6 +9,7 @@ import { EstudiantesSection } from "@/app/components/EstudiantesSection"
 import { CursosSection } from "@/app/components/CursosSection"
 import { GruposPorCursoSection } from "@/app/components/GruposPorCursoSection"
 import { InventarioSection } from "@/app/components/InventarioSection"
+import { DisponibilidadSalaSection } from "@/app/components/DisponibilidadSalaSection"
 import { useCursos } from "@/app/hooks/useCursos"
 import { SectionToolbar } from "@/app/components/SectionToolbar"
 import { FilterPill } from "@/app/components/FilterPill"
@@ -28,31 +29,6 @@ interface Solicitud {
 }
 
 const estadosFiltrables = ["PENDIENTE", "APROBADA", "RECHAZADA", "EN_PROCESO", "FINALIZADA"]
-
-interface Bloque {
-    dia: string
-    hora: string
-    disponible: boolean
-}
-
-
-const horarios: Bloque[] = [
-    { dia: "Lun", hora: "09:00-10:00", disponible: true },
-    { dia: "Lun", hora: "10:00-11:00", disponible: false },
-    { dia: "Lun", hora: "11:00-12:00", disponible: true },
-    { dia: "Mar", hora: "09:00-10:00", disponible: true },
-    { dia: "Mar", hora: "10:00-11:00", disponible: true },
-    { dia: "Mar", hora: "11:00-12:00", disponible: false },
-    { dia: "Mié", hora: "09:00-10:00", disponible: false },
-    { dia: "Mié", hora: "10:00-11:00", disponible: true },
-    { dia: "Mié", hora: "11:00-12:00", disponible: true },
-    { dia: "Jue", hora: "09:00-10:00", disponible: true },
-    { dia: "Jue", hora: "10:00-11:00", disponible: true },
-    { dia: "Jue", hora: "11:00-12:00", disponible: true },
-    { dia: "Vie", hora: "09:00-10:00", disponible: true },
-    { dia: "Vie", hora: "10:00-11:00", disponible: false },
-    { dia: "Vie", hora: "11:00-12:00", disponible: false },
-]
 
 interface RegistroFilamento {
     fecha: string
@@ -219,36 +195,7 @@ export default function AyudantePage() {
 
             {tab === "inventario" && <InventarioSection />}
 
-            {tab === "sala" && (
-                <section>
-                    <p className="mb-6 text-sm text-slate-500">Disponibilidad de la sala para la semana.</p>
-                    <div className="grid grid-cols-5 gap-3">
-                        {["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"].map((dia, di) => (
-                            <div key={dia} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_30px_rgba(74,39,117,0.05)]">
-                                <p className="mb-3 text-center text-xs font-medium uppercase tracking-wider text-slate-500">
-                                    {dia}
-                                </p>
-                                <div className="space-y-2">
-                                    {horarios
-                                        .filter((b) => b.dia === ["Lun", "Mar", "Mié", "Jue", "Vie"][di])
-                                        .map((b, i) => (
-                                            <div
-                                                key={i}
-                                                className={`rounded-lg border px-3 py-2 text-center text-xs ${
-                                                    b.disponible
-                                                        ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                                                        : "border-rose-200 bg-rose-50 text-rose-600"
-                                                }`}
-                                            >
-                                                {b.hora}
-                                            </div>
-                                        ))}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </section>
-            )}
+            {tab === "sala" && <DisponibilidadSalaSection />}
 
             {tab === "filamento" && (
                 <section>

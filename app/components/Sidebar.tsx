@@ -31,16 +31,15 @@ const items: Record<Rol, MenuItem[]> = {
         { id: "estudiantes", label: "Estudiantes", icon: <UsersSvg /> },
         { id: "grupos", label: "Grupos", icon: <GroupSvg /> },
         { id: "solicitudes", label: "Solicitudes", icon: <FileSvg /> },
-        { id: "sala", label: "Reservar Sala", icon: <CalendarSvg /> },
     ],
     ESTUDIANTE: [
         { id: "solicitudes", label: "Mis Solicitudes", icon: <FileSvg /> },
         { id: "ayudantias", label: "Ayudantías", icon: <HatSvg /> },
-        { id: "sala", label: "Reservar Sala", icon: <CalendarSvg /> },
     ],
     SOLICITANTE: [
         { id: "nueva-solicitud", label: "Nueva Solicitud", icon: <PlusSvg /> },
         { id: "solicitudes", label: "Mis Solicitudes", icon: <FileSvg /> },
+        { id: "sala", label: "Reservar Sala", icon: <CalendarSvg /> },
     ],
 }
 /* eslint-enable @typescript-eslint/naming-convention */

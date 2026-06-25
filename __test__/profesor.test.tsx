@@ -161,12 +161,4 @@ describe('Dashboard Profesor', () => {
         expect(screen.getByText('Ana Pérez')).toBeInTheDocument()
     })
 
-    it('la pestaña Reservar Sala muestra el formulario de reserva', async () => {
-        mockFetchProfesor()
-        render(<ProfesorPage />)
-
-        fireEvent.click(screen.getByText('Reservar Sala'))
-
-        expect(screen.getByText('Reserva la sala interactiva para tus actividades.')).toBeInTheDocument()
-    })
 })

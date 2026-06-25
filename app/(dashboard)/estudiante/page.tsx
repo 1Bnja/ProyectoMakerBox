@@ -6,7 +6,6 @@ import { DataTable, type Column } from "@/app/components/DataTable"
 import { DashboardShell } from "@/app/components/DashboardShell"
 import { SectionToolbar } from "@/app/components/SectionToolbar"
 import { Button } from "@/app/components/Button"
-import { FormField, FormSelect } from "@/app/components/FormField"
 import FormularioSolicitudEstudiante from './FormularioSolicitud'
 
 interface Solicitud {
@@ -138,38 +137,6 @@ export default function EstudiantePage() {
                 </section>
             )}
 
-            {tab === "sala" && (
-                <section>
-                    <p className="mb-6 text-sm text-slate-500">
-                        Reserva un bloque en la sala interactiva para trabajar en tus proyectos.
-                    </p>
-                    <div className="mx-auto max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(74,39,117,0.06)]">
-                        <h3 className="mb-4 text-sm font-semibold text-slate-900">
-                            Nueva reserva
-                        </h3>
-                        <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
-                            <FormField label="Fecha" type="date" className="bg-white text-slate-900" />
-                            <div className="grid grid-cols-2 gap-3">
-                                <FormSelect label="Desde" className="text-slate-900">
-                                    <option>09:00</option>
-                                    <option>10:00</option>
-                                    <option>11:00</option>
-                                    <option>14:00</option>
-                                </FormSelect>
-                                <FormSelect label="Hasta" className="text-slate-900">
-                                    <option>10:00</option>
-                                    <option>11:00</option>
-                                    <option>12:00</option>
-                                    <option>15:00</option>
-                                </FormSelect>
-                            </div>
-                            <Button type="submit" fullWidth>
-                                Solicitar Reserva
-                            </Button>
-                        </form>
-                    </div>
-                </section>
-            )}
             {mostrarModal && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
                 <FormularioSolicitudEstudiante onCancelar={cerrarModal} />
