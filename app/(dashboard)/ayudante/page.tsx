@@ -13,8 +13,8 @@ import { DisponibilidadSalaSection } from "@/app/components/DisponibilidadSalaSe
 import { useCursos } from "@/app/hooks/useCursos"
 import { SectionToolbar } from "@/app/components/SectionToolbar"
 import { FilterPill } from "@/app/components/FilterPill"
-import { Button } from "@/app/components/Button"
 import { SolicitudDetalleModal } from "@/app/components/SolicitudDetalleModal"
+import { RegistroFilamentoSection } from "@/app/components/RegistroFilamentoSection"
 
 interface Solicitud {
     id: string
@@ -30,28 +30,7 @@ interface Solicitud {
 
 const estadosFiltrables = ["PENDIENTE", "APROBADA", "RECHAZADA", "EN_PROCESO", "FINALIZADA"]
 
-interface RegistroFilamento {
-    fecha: string
-    solicitud: string
-    material: string
-    gramos: number
-    usuario: string
-}
 
-const filamentos: RegistroFilamento[] = [
-    { fecha: "2026-06-14", solicitud: "S-001", material: "PLA Negro", gramos: 45, usuario: "Lukas Avello" },
-    { fecha: "2026-06-13", solicitud: "S-002", material: "PLA Blanco", gramos: 120, usuario: "Camila Rojas" },
-    { fecha: "2026-06-12", solicitud: "S-003", material: "PETG Transparente", gramos: 78, usuario: "Lukas Avello" },
-    { fecha: "2026-06-11", solicitud: "S-004", material: "PLA Rojo", gramos: 32, usuario: "Camila Rojas" },
-]
-
-const colsFilamento: Column<RegistroFilamento>[] = [
-    { key: "fecha", header: "Fecha" },
-    { key: "solicitud", header: "Solicitud" },
-    { key: "material", header: "Material" },
-    { key: "gramos", header: "Gramos" },
-    { key: "usuario", header: "Registrado por" },
-]
 
 export default function AyudantePage() {
     const [tab, setTab] = useState("solicitudes")
@@ -197,19 +176,7 @@ export default function AyudantePage() {
 
             {tab === "sala" && <DisponibilidadSalaSection />}
 
-            {tab === "filamento" && (
-                <section>
-                    <div className="mb-6 grid grid-cols-3 gap-4">
-                        <StatCard label="Filamento usado hoy" value="165g" accent="pink" />
-                        <StatCard label="Filamento usado esta semana" value="720g" accent="purple" />
-                        <StatCard label="Rollos activos" value="6" accent="blue" />
-                    </div>
-                    <SectionToolbar descripcion="Registro de uso de filamento.">
-                        <Button accent="pink">+ Registrar Uso</Button>
-                    </SectionToolbar>
-                    <DataTable columns={colsFilamento} data={filamentos} />
-                </section>
-            )}
+            {tab === "filamento" && <RegistroFilamentoSection />}
         </DashboardShell>
     )
 }
