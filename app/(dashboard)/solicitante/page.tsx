@@ -3,6 +3,7 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react"
 import { getSupabaseClient } from "@/lib/supabase/client"
 import { validarDatosImpresion } from "@/lib/flujo/validacionesImpresion"
+import { esDiaOperativo } from "@/lib/sala/diasSemana"
 import { StatusBadge } from "@/app/components/StatusBadge"
 import { DataTable, type Column } from "@/app/components/DataTable"
 import { DashboardShell } from "@/app/components/DashboardShell"
@@ -99,6 +100,7 @@ export default function SolicitantePage() {
 
     const [fechaSala, setFechaSala] = useState("")
     const [bloquesDisponibles, setBloquesDisponibles] = useState<BloqueDisponible[]>([])
+    const [diaCerrado, setDiaCerrado] = useState(false)
     const [loadingBloques, setLoadingBloques] = useState(false)
     const [bloqueId, setBloqueId] = useState("")
     const [actividadSala, setActividadSala] = useState("")
@@ -110,9 +112,16 @@ export default function SolicitantePage() {
         setFechaSala(nuevaFecha)
         setBloqueId("")
         setMensajeSala(null)
+        setDiaCerrado(false)
 
         if (!nuevaFecha) {
             setBloquesDisponibles([])
+            return
+        }
+
+        if (!esDiaOperativo(nuevaFecha)) {
+            setBloquesDisponibles([])
+            setDiaCerrado(true)
             return
         }
 
@@ -515,6 +524,8 @@ export default function SolicitantePage() {
                                     <span className="text-sm font-bold text-[#4A2775]">Bloque horario *</span>
                                     {!fechaSala ? (
                                         <p className="text-sm text-slate-500">Selecciona una fecha para ver los bloques disponibles.</p>
+                                    ) : diaCerrado ? (
+                                        <p className="text-sm text-slate-500">La sala no opera ese día (solo de lunes a viernes).</p>
                                     ) : loadingBloques ? (
                                         <p className="text-sm text-slate-500">Cargando disponibilidad...</p>
                                     ) : bloquesDisponibles.length === 0 ? (

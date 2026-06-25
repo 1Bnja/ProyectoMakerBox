@@ -21,11 +21,23 @@ export interface ReservaSala {
     solicitante: { nombre: string; apellido: string } | null
 }
 
+export interface BloqueGestion extends Bloque {
+    reservaId: string | null
+}
+
 export function useDisponibilidadSala() {
     const [bloques, setBloques] = useState<Bloque[]>([])
     const [reservas, setReservas] = useState<ReservaSala[]>([])
     const [cargando, setCargando] = useState(false)
     const [error, setError] = useState<string | null>(null)
+
+    const [bloquesGestion, setBloquesGestion] = useState<BloqueGestion[]>([])
+    const [cargandoGestion, setCargandoGestion] = useState(false)
+    const [errorGestion, setErrorGestion] = useState<string | null>(null)
+
+    const [bloquesSemana, setBloquesSemana] = useState<Record<string, BloqueGestion[]>>({})
+    const [cargandoSemana, setCargandoSemana] = useState(false)
+    const [errorSemana, setErrorSemana] = useState<string | null>(null)
 
     const cargar = useCallback(async () => {
         setCargando(true)
@@ -71,5 +83,107 @@ export function useDisponibilidadSala() {
         }
     }, [])
 
-    return { bloques, reservas, cargando, error, cargar, toggleDisponible }
+    const cargarGestion = useCallback(async (fecha: string) => {
+        setCargandoGestion(true)
+        setErrorGestion(null)
+        try {
+            const res = await fetch(`/api/disponibilidad-sala?fecha=${fecha}&vista=gestion`)
+            const data = await res.json()
+            if (!res.ok) throw new Error(data.error || "Error al cargar la gestión de fecha")
+            setBloquesGestion(data)
+        } catch (err: unknown) {
+            setBloquesGestion([])
+            if (err instanceof Error) {
+                setErrorGestion(err.message)
+            }
+        } finally {
+            setCargandoGestion(false)
+        }
+    }, [])
+
+    const bloquearFecha = useCallback(async (bloqueId: string, fecha: string, actividad?: string) => {
+        setErrorGestion(null)
+        try {
+            const res = await fetch("/api/reservas-sala", {
+                method: "POST",
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                headers: { "Content-Type": "application/json" },
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                body: JSON.stringify({ bloque_id: bloqueId, fecha, actividad }),
+            })
+            const data = await res.json()
+            if (!res.ok) throw new Error(data.error || "Error al bloquear la fecha")
+            setBloquesGestion((prev) => prev.map((b) => (b.id === bloqueId ? { ...b, reservaId: data.id } : b)))
+            setBloquesSemana((prev) =>
+                prev[fecha]
+                    ? { ...prev, [fecha]: prev[fecha].map((b) => (b.id === bloqueId ? { ...b, reservaId: data.id } : b)) }
+                    : prev
+            )
+        } catch (err: unknown) {
+            if (err instanceof Error) {
+                setErrorGestion(err.message)
+            }
+        }
+    }, [])
+
+    const liberarReserva = useCallback(async (reservaId: string, bloqueId: string) => {
+        setErrorGestion(null)
+        try {
+            const res = await fetch(`/api/reservas-sala/${reservaId}`, { method: "DELETE" })
+            const data = await res.json()
+            if (!res.ok) throw new Error(data.error || "Error al liberar la reserva")
+            setBloquesGestion((prev) => prev.map((b) => (b.id === bloqueId ? { ...b, reservaId: null } : b)))
+            setBloquesSemana((prev) => {
+                const fecha = Object.keys(prev).find((f) => prev[f].some((b) => b.id === bloqueId))
+                if (!fecha) return prev
+                return { ...prev, [fecha]: prev[fecha].map((b) => (b.id === bloqueId ? { ...b, reservaId: null } : b)) }
+            })
+        } catch (err: unknown) {
+            if (err instanceof Error) {
+                setErrorGestion(err.message)
+            }
+        }
+    }, [])
+
+    const cargarGestionSemana = useCallback(async (fechas: string[]) => {
+        setCargandoSemana(true)
+        setErrorSemana(null)
+        try {
+            const resultados = await Promise.all(
+                fechas.map(async (fecha) => {
+                    const res = await fetch(`/api/disponibilidad-sala?fecha=${fecha}&vista=gestion`)
+                    const data = await res.json()
+                    if (!res.ok) throw new Error(data.error || "Error al cargar la gestión de la semana")
+                    return [fecha, data] as const
+                })
+            )
+            setBloquesSemana(Object.fromEntries(resultados))
+        } catch (err: unknown) {
+            setBloquesSemana({})
+            if (err instanceof Error) {
+                setErrorSemana(err.message)
+            }
+        } finally {
+            setCargandoSemana(false)
+        }
+    }, [])
+
+    return {
+        bloques,
+        reservas,
+        cargando,
+        error,
+        cargar,
+        toggleDisponible,
+        bloquesGestion,
+        cargandoGestion,
+        errorGestion,
+        cargarGestion,
+        bloquearFecha,
+        liberarReserva,
+        bloquesSemana,
+        cargandoSemana,
+        errorSemana,
+        cargarGestionSemana,
+    }
 }

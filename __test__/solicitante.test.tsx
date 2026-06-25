@@ -132,6 +132,22 @@ describe('RES-01: Dashboard Solicitante - Reservar Sala', () => {
         await waitFor(() => expect(screen.getByText('¡Reserva de sala creada exitosamente!')).toBeInTheDocument())
     })
 
+    it('si la fecha elegida es fin de semana, avisa que la sala no opera y no consulta la API', async () => {
+        mockFetchSolicitante()
+        render(<SolicitantePage />)
+
+        fireEvent.click(screen.getByText(/reservar sala/i))
+
+        const inputFecha = document.getElementById('fechaSala') as HTMLInputElement
+        // 2026-06-28 es domingo
+        fireEvent.change(inputFecha, { target: { value: '2026-06-28' } })
+
+        await waitFor(() =>
+            expect(screen.getByText('La sala no opera ese día (solo de lunes a viernes).')).toBeInTheDocument()
+        )
+        expect(global.fetch).not.toHaveBeenCalledWith(expect.stringContaining('/api/disponibilidad-sala?fecha=2026-06-28'))
+    })
+
     it('muestra un error si se intenta reservar sin seleccionar un bloque', async () => {
         mockFetchSolicitante()
         const { container } = render(<SolicitantePage />)

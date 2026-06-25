@@ -187,5 +187,73 @@ describe("RES-01 - Handlers reales de POST /api/reservas-sala", () => {
 
         expect(res.status).toBe(500)
     })
+
+    it("permite reservar al AYUDANTE para bloquear una fecha específica", async () => {
+        const { POST } = await import("@/app/api/reservas-sala/route")
+        mock.setUser({ id: "u1" })
+        mock.queueFrom({ rol: "AYUDANTE" })
+        mock.queueFrom({ id: "b1", dia: "LUNES", disponible: true })
+        mock.queueFrom(null)
+        mock.queueFrom({ id: "r1", fecha: "2026-06-22", actividad: "Mantención", created_at: "2026-06-14T00:00:00Z" })
+
+        const res = await POST(postRequest({ bloque_id: "b1", fecha: "2026-06-22", actividad: "Mantención" }))
+
+        expect(res.status).toBe(200)
+    })
+})
+
+function deleteRequest() {
+    return new Request("http://localhost/api/reservas-sala/r1", { method: "DELETE" })
+}
+
+const paramsId = Promise.resolve({ id: "r1" })
+
+describe("RES-02 - Handlers reales de DELETE /api/reservas-sala/[id]", () => {
+    beforeEach(() => {
+        vi.clearAllMocks()
+    })
+
+    it("retorna 401 si no hay usuario autenticado", async () => {
+        const { DELETE } = await import("@/app/api/reservas-sala/[id]/route")
+        mock.setUser(null)
+
+        const res = await DELETE(deleteRequest(), { params: paramsId })
+
+        expect(res.status).toBe(401)
+    })
+
+    it("retorna 403 si el usuario no es AYUDANTE", async () => {
+        const { DELETE } = await import("@/app/api/reservas-sala/[id]/route")
+        mock.setUser({ id: "u1" })
+        mock.queueFrom({ rol: "SOLICITANTE" })
+
+        const res = await DELETE(deleteRequest(), { params: paramsId })
+
+        expect(res.status).toBe(403)
+    })
+
+    it("retorna 500 si falla el delete", async () => {
+        const { DELETE } = await import("@/app/api/reservas-sala/[id]/route")
+        mock.setUser({ id: "u1" })
+        mock.queueFrom({ rol: "AYUDANTE" })
+        mock.queueFrom(null, { message: "delete failed" })
+
+        const res = await DELETE(deleteRequest(), { params: paramsId })
+
+        expect(res.status).toBe(500)
+    })
+
+    it("cancela la reserva correctamente", async () => {
+        const { DELETE } = await import("@/app/api/reservas-sala/[id]/route")
+        mock.setUser({ id: "u1" })
+        mock.queueFrom({ rol: "AYUDANTE" })
+        mock.queueFrom(null)
+
+        const res = await DELETE(deleteRequest(), { params: paramsId })
+        const body = await res.json()
+
+        expect(res.status).toBe(200)
+        expect(body.ok).toBe(true)
+    })
 })
 /* eslint-enable @typescript-eslint/naming-convention */

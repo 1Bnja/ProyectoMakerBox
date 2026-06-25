@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
-
-const dias = ["DOMINGO", "LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO"]
+import { obtenerDiaDeFecha } from "@/lib/sala/diasSemana"
 
 interface BloqueRow {
     id: string
@@ -22,6 +21,7 @@ export async function GET(request: Request) {
 
     const url = new URL(request.url)
     const fecha = url.searchParams.get("fecha")
+    const vista = url.searchParams.get("vista")
 
     if (!fecha) {
         const { data, error } = await supabase
@@ -42,7 +42,19 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: "Fecha inválida" }, { status: 400 })
     }
 
-    const dia = dias[fechaDate.getUTCDay()]
+    if (vista === "gestion") {
+        const { data: perfil } = await supabase
+            .from("perfiles")
+            .select("rol")
+            .eq("id", user.id)
+            .single()
+
+        if (!perfil || perfil.rol !== "AYUDANTE") {
+            return NextResponse.json({ error: "No tienes permisos para gestionar la disponibilidad de la sala" }, { status: 403 })
+        }
+    }
+
+    const dia = obtenerDiaDeFecha(fecha)
 
     const { data: bloques, error: bloquesError } = await supabase
         .from("bloques_disponibilidad")
@@ -57,11 +69,12 @@ export async function GET(request: Request) {
 
     const bloqueIds = ((bloques ?? []) as BloqueRow[]).map((b) => b.id)
 
-    let reservadosIds: string[] = []
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    let reservas: { id: string; bloque_id: string }[] = []
     if (bloqueIds.length > 0) {
-        const { data: reservas, error: reservasError } = await supabase
+        const { data, error: reservasError } = await supabase
             .from("reservas_sala")
-            .select("bloque_id")
+            .select("id, bloque_id")
             .eq("fecha", fecha)
             .in("bloque_id", bloqueIds)
 
@@ -69,9 +82,18 @@ export async function GET(request: Request) {
             return NextResponse.json({ error: reservasError.message }, { status: 500 })
         }
 
-        reservadosIds = (reservas ?? []).map((r) => r.bloque_id)
+        reservas = data ?? []
     }
 
+    if (vista === "gestion") {
+        const resultado = ((bloques ?? []) as BloqueRow[]).map((b) => {
+            const reserva = reservas.find((r) => r.bloque_id === b.id)
+            return { ...b, reservaId: reserva?.id ?? null }
+        })
+        return NextResponse.json(resultado)
+    }
+
+    const reservadosIds = reservas.map((r) => r.bloque_id)
     const disponibles = ((bloques ?? []) as BloqueRow[]).filter((b) => !reservadosIds.includes(b.id))
 
     return NextResponse.json(disponibles)

@@ -111,6 +111,37 @@ describe("RES-02 - Handlers reales de GET /api/disponibilidad-sala", () => {
         expect(res.status).toBe(200)
         expect(body).toEqual([])
     })
+
+    it("vista=gestion retorna 403 si el usuario no es AYUDANTE", async () => {
+        const { GET } = await import("@/app/api/disponibilidad-sala/route")
+        mock.setUser({ id: "u1" })
+        mock.queueFrom({ rol: "SOLICITANTE" })
+
+        const res = await GET(getRequest("?fecha=2026-06-22&vista=gestion"))
+
+        expect(res.status).toBe(403)
+    })
+
+    it("vista=gestion retorna todos los bloques del día con su reservaId (ocupados y libres)", async () => {
+        const { GET } = await import("@/app/api/disponibilidad-sala/route")
+        mock.setUser({ id: "u1" })
+        mock.queueFrom({ rol: "AYUDANTE" })
+        mock.queueFrom([
+            { id: "b1", dia: "LUNES", hora_inicio: "09:00", hora_fin: "10:00", disponible: true },
+            { id: "b2", dia: "LUNES", hora_inicio: "10:00", hora_fin: "11:00", disponible: true },
+        ])
+        mock.queueFrom([{ id: "r1", bloque_id: "b2" }])
+
+        // 2026-06-22 es lunes
+        const res = await GET(getRequest("?fecha=2026-06-22&vista=gestion"))
+        const body = await res.json()
+
+        expect(res.status).toBe(200)
+        expect(body).toEqual([
+            { id: "b1", dia: "LUNES", hora_inicio: "09:00", hora_fin: "10:00", disponible: true, reservaId: null },
+            { id: "b2", dia: "LUNES", hora_inicio: "10:00", hora_fin: "11:00", disponible: true, reservaId: "r1" },
+        ])
+    })
 })
 
 const paramsId = Promise.resolve({ id: "b1" })

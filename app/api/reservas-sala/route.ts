@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
-
-const dias = ["DOMINGO", "LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO"]
+import { obtenerDiaDeFecha } from "@/lib/sala/diasSemana"
 
 export async function GET() {
     const supabase = await createSupabaseServerClient()
@@ -47,8 +46,8 @@ export async function POST(request: Request) {
         .eq("id", user.id)
         .single()
 
-    if (!perfil || perfil.rol !== "SOLICITANTE") {
-        return NextResponse.json({ error: "Solo un solicitante puede reservar la sala" }, { status: 403 })
+    if (!perfil || (perfil.rol !== "SOLICITANTE" && perfil.rol !== "AYUDANTE")) {
+        return NextResponse.json({ error: "Solo un solicitante o el ayudante puede reservar la sala" }, { status: 403 })
     }
 
     const body = await request.json()
@@ -80,7 +79,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Este bloque no está disponible" }, { status: 409 })
     }
 
-    if (bloque.dia !== dias[fechaDate.getUTCDay()]) {
+    if (bloque.dia !== obtenerDiaDeFecha(fecha)) {
         return NextResponse.json({ error: "El bloque no corresponde al día de la fecha indicada" }, { status: 400 })
     }
 
