@@ -16,7 +16,7 @@ interface FieldProps extends InputHTMLAttributes<HTMLInputElement> {
 export function FormField({ label, accent = "purple", className = "", ...props }: FieldProps) {
     return (
         <div>
-            <label className={labelClass}>{label}</label>
+            <label htmlFor={props.id} className={labelClass}>{label}</label>
             <input className={`${inputBase} ${accentClasses[accent].ring} ${className}`} {...props} />
         </div>
     )

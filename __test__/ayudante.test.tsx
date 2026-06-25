@@ -171,6 +171,10 @@ function mockFetchAyudante() {
             return Promise.resolve({ ok: true, json: () => Promise.resolve([]) })
         }
 
+        if (u.includes('/api/uso-impresion')) {
+            return Promise.resolve({ ok: true, json: () => Promise.resolve([]) })
+        }
+
         if (u.includes('/api/auth/me')) {
             return Promise.resolve({
                 ok: true,
