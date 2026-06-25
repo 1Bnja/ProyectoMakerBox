@@ -32,7 +32,7 @@ describe('EstudiantesSection', () => {
 
     it('muestra el estado de carga inicialmente', () => {
         mockFetchEstudiantesCursos()
-        const { container } = render(
+        render(
             <EstudiantesSection
                 accent="purple"
                 descripcion="Gestión de estudiantes"
@@ -45,7 +45,7 @@ describe('EstudiantesSection', () => {
 
     it('muestra la tabla de estudiantes una vez cargados', async () => {
         mockFetchEstudiantesCursos()
-        const { container } = render(
+        render(
             <EstudiantesSection
                 accent="purple"
                 descripcion="Gestión de estudiantes"
@@ -62,7 +62,7 @@ describe('EstudiantesSection', () => {
 
     it('abre el modal de creación al hacer clic en el botón', async () => {
         mockFetchEstudiantesCursos()
-        const { container } = render(
+        render(
             <EstudiantesSection
                 accent="purple"
                 descripcion="Gestión de estudiantes"
@@ -80,7 +80,7 @@ describe('EstudiantesSection', () => {
 
     it('cierra el modal al hacer clic en Cancelar', async () => {
         mockFetchEstudiantesCursos()
-        const { container } = render(
+        render(
             <EstudiantesSection
                 accent="purple"
                 descripcion="Gestión de estudiantes"

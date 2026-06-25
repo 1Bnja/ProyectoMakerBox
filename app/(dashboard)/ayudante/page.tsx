@@ -8,6 +8,7 @@ import { DashboardShell } from "@/app/components/DashboardShell"
 import { EstudiantesSection } from "@/app/components/EstudiantesSection"
 import { CursosSection } from "@/app/components/CursosSection"
 import { GruposPorCursoSection } from "@/app/components/GruposPorCursoSection"
+import { InventarioSection } from "@/app/components/InventarioSection"
 import { useCursos } from "@/app/hooks/useCursos"
 import { SectionToolbar } from "@/app/components/SectionToolbar"
 import { FilterPill } from "@/app/components/FilterPill"
@@ -34,37 +35,6 @@ interface Bloque {
     disponible: boolean
 }
 
-interface ItemInv {
-    articulo: string
-    color: string
-    stock: number
-    minimo: number
-}
-
-const inventario: ItemInv[] = [
-    { articulo: "Filamento PLA 1.75mm", color: "Negro", stock: 12, minimo: 5 },
-    { articulo: "Filamento PLA 1.75mm", color: "Blanco", stock: 3, minimo: 5 },
-    { articulo: "Filamento PLA 1.75mm", color: "Rojo", stock: 8, minimo: 5 },
-    { articulo: "Filamento PETG 1.75mm", color: "Transparente", stock: 6, minimo: 3 },
-    { articulo: "Resina UV", color: "Gris", stock: 2, minimo: 4 },
-]
-
-const colsInv: Column<ItemInv>[] = [
-    { key: "articulo", header: "Artículo" },
-    { key: "color", header: "Color" },
-    { key: "stock", header: "Stock" },
-    { key: "minimo", header: "Stock Mín." },
-    {
-        key: "alerta",
-        header: "Alerta",
-        render: (i) =>
-            i.stock <= i.minimo ? (
-                <span className="text-xs font-medium text-rose-600">Stock bajo</span>
-            ) : (
-                <span className="text-xs text-slate-400">OK</span>
-            ),
-    },
-]
 
 const horarios: Bloque[] = [
     { dia: "Lun", hora: "09:00-10:00", disponible: true },
@@ -247,14 +217,7 @@ export default function AyudantePage() {
 
             {tab === "grupos" && <GruposPorCursoSection accent="pink" cursos={cursos} />}
 
-            {tab === "inventario" && (
-                <section>
-                    <SectionToolbar descripcion="Artículos disponibles en inventario.">
-                        <Button accent="pink">+ Agregar Artículo</Button>
-                    </SectionToolbar>
-                    <DataTable columns={colsInv} data={inventario} />
-                </section>
-            )}
+            {tab === "inventario" && <InventarioSection />}
 
             {tab === "sala" && (
                 <section>
