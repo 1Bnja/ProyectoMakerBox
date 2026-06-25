@@ -79,9 +79,43 @@ const cursosFixture = [
     },
 ]
 
+const bloquesFixture = [
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    { id: 'b1', dia: 'LUNES', hora_inicio: '09:00:00', hora_fin: '10:00:00', disponible: true },
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    { id: 'b2', dia: 'LUNES', hora_inicio: '10:00:00', hora_fin: '11:00:00', disponible: false },
+]
+
+const reservasFixture = [
+    {
+        id: 'r1',
+        fecha: '2026-06-22',
+        actividad: 'Reunión de grupo',
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        created_at: '2026-06-14T00:00:00Z',
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        bloque: { dia: 'LUNES', hora_inicio: '09:00:00', hora_fin: '10:00:00' },
+        solicitante: { nombre: 'Pedro', apellido: 'Pérez' },
+    },
+]
+
 function mockFetchAyudante() {
     global.fetch = vi.fn((url: string | Request | URL, init?: RequestInit) => {
         const u = url.toString()
+
+        if (u.includes('/api/disponibilidad-sala/') && init?.method === 'PATCH') {
+            const body = JSON.parse((init.body as string) ?? '{}')
+            return Promise.resolve({
+                ok: true,
+                json: () => Promise.resolve({ ...bloquesFixture[0], id: 'b1', disponible: body.disponible }),
+            })
+        }
+        if (u.includes('/api/disponibilidad-sala')) {
+            return Promise.resolve({ ok: true, json: () => Promise.resolve(bloquesFixture) })
+        }
+        if (u.includes('/api/reservas-sala')) {
+            return Promise.resolve({ ok: true, json: () => Promise.resolve(reservasFixture) })
+        }
 
         if (u.includes('/api/grupos?curso_id=c1')) {
             // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -215,10 +249,36 @@ describe('IMP-03/IMP-04/IMP-05: Dashboard Ayudante - Solicitudes reales', () => 
         expect(screen.getByText('Artículos disponibles en inventario.')).toBeInTheDocument()
 
         fireEvent.click(screen.getByText(/sala/i))
-        expect(screen.getByText('Disponibilidad de la sala para la semana.')).toBeInTheDocument()
+        await waitFor(() =>
+            expect(screen.getByText('Disponibilidad de la sala interactiva para la semana.')).toBeInTheDocument()
+        )
 
         fireEvent.click(screen.getByText(/filamento/i))
         expect(screen.getByText('Registro de uso de filamento.')).toBeInTheDocument()
+    })
+
+    it('en la pestaña Sala, permite alternar la disponibilidad de un bloque y muestra las reservas', async () => {
+        mockFetchAyudante()
+        render(<AyudantePage />)
+
+        await waitFor(() => expect(screen.getByText('Benjamín Silva')).toBeInTheDocument())
+
+        fireEvent.click(screen.getByText(/sala/i))
+        await waitFor(() => expect(screen.getByText('09:00-10:00')).toBeInTheDocument())
+
+        expect(screen.getByText('Pedro Pérez')).toBeInTheDocument()
+
+        fireEvent.click(screen.getByText('Deshabilitar'))
+
+        await waitFor(() => {
+            expect(global.fetch).toHaveBeenCalledWith(
+                '/api/disponibilidad-sala/b1',
+                expect.objectContaining({
+                    method: 'PATCH',
+                    body: JSON.stringify({ disponible: false }),
+                })
+            )
+        })
     })
 
     it('la pestaña Grupos permite ver y crear grupos de cualquier curso', async () => {

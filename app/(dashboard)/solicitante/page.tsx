@@ -42,6 +42,15 @@ interface FormDatos {
     comentarios: string
 }
 
+interface BloqueDisponible {
+    id: string
+    dia: string
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    hora_inicio: string
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    hora_fin: string
+}
+
 export default function SolicitantePage() {
     const supabase = getSupabaseClient()
     const [tab, setTab] = useState("nueva-solicitud")
@@ -85,6 +94,70 @@ export default function SolicitantePage() {
     useEffect(() => {
         cargarHistorial()
     }, [])
+
+    /* ---------- reserva sala state ---------- */
+
+    const [fechaSala, setFechaSala] = useState("")
+    const [bloquesDisponibles, setBloquesDisponibles] = useState<BloqueDisponible[]>([])
+    const [loadingBloques, setLoadingBloques] = useState(false)
+    const [bloqueId, setBloqueId] = useState("")
+    const [actividadSala, setActividadSala] = useState("")
+    const [enviandoReserva, setEnviandoReserva] = useState(false)
+    const [mensajeSala, setMensajeSala] = useState<{ tipo: "exito" | "error"; texto: string } | null>(null)
+
+    const handleFechaSalaChange = async (e: ChangeEvent<HTMLInputElement>) => {
+        const nuevaFecha = e.target.value
+        setFechaSala(nuevaFecha)
+        setBloqueId("")
+        setMensajeSala(null)
+
+        if (!nuevaFecha) {
+            setBloquesDisponibles([])
+            return
+        }
+
+        setLoadingBloques(true)
+        const res = await fetch(`/api/disponibilidad-sala?fecha=${nuevaFecha}`)
+        const data = await res.json()
+        setBloquesDisponibles(res.ok ? data : [])
+        setLoadingBloques(false)
+    }
+
+    const handleSubmitReserva = async (e: FormEvent) => {
+        e.preventDefault()
+        if (!fechaSala || !bloqueId) {
+            setMensajeSala({ tipo: "error", texto: "Selecciona una fecha y un bloque horario disponible." })
+            return
+        }
+
+        setEnviandoReserva(true)
+        setMensajeSala(null)
+
+        try {
+            /* eslint-disable @typescript-eslint/naming-convention */
+            const res = await fetch("/api/reservas-sala", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ bloque_id: bloqueId, fecha: fechaSala, actividad: actividadSala || undefined }),
+            })
+            /* eslint-enable @typescript-eslint/naming-convention */
+            const data = await res.json()
+
+            if (!res.ok) throw new Error(data.error || "Error al reservar la sala")
+
+            setMensajeSala({ tipo: "exito", texto: "¡Reserva de sala creada exitosamente!" })
+            setBloqueId("")
+            setActividadSala("")
+            const refresco = await fetch(`/api/disponibilidad-sala?fecha=${fechaSala}`)
+            const refrescoData = await refresco.json()
+            setBloquesDisponibles(refresco.ok ? refrescoData : [])
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "Hubo un problema al procesar la reserva."
+            setMensajeSala({ tipo: "error", texto: message })
+        } finally {
+            setEnviandoReserva(false)
+        }
+    }
 
     const handleInputChange = (
         e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -202,7 +275,7 @@ export default function SolicitantePage() {
             rol="SOLICITANTE"
             tab={tab}
             onTabChange={setTab}
-            title={tab === "nueva-solicitud" ? "Nueva Solicitud" : "Mis Solicitudes"}
+            title={tab === "nueva-solicitud" ? "Nueva Solicitud" : tab === "sala" ? "Reservar Sala" : "Mis Solicitudes"}
         >
                     {tab === "nueva-solicitud" && (
                         <div
@@ -404,6 +477,103 @@ export default function SolicitantePage() {
                                 />
                             )}
                         </section>
+                    )}
+
+                    {tab === "sala" && (
+                        <div style={{ maxWidth: "600px", margin: "0 auto" }}>
+                            {mensajeSala && (
+                                <div
+                                    className={`mb-5 rounded-lg border px-3 py-2 text-sm ${
+                                        mensajeSala.tipo === "exito"
+                                            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                                            : "border-rose-200 bg-rose-50 text-rose-600"
+                                    }`}
+                                >
+                                    {mensajeSala.texto}
+                                </div>
+                            )}
+
+                            <form
+                                onSubmit={handleSubmitReserva}
+                                className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(188,54,123,0.06)]"
+                            >
+                                <div className="flex flex-col gap-1.5">
+                                    <label htmlFor="fechaSala" className="text-sm font-bold text-[#4A2775]">
+                                        Fecha *
+                                    </label>
+                                    <input
+                                        type="date"
+                                        id="fechaSala"
+                                        required
+                                        value={fechaSala}
+                                        onChange={handleFechaSalaChange}
+                                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-[#4A2775] focus:ring-4 focus:ring-[#4A2775]/15"
+                                    />
+                                </div>
+
+                                <div className="flex flex-col gap-1.5">
+                                    <span className="text-sm font-bold text-[#4A2775]">Bloque horario *</span>
+                                    {!fechaSala ? (
+                                        <p className="text-sm text-slate-500">Selecciona una fecha para ver los bloques disponibles.</p>
+                                    ) : loadingBloques ? (
+                                        <p className="text-sm text-slate-500">Cargando disponibilidad...</p>
+                                    ) : bloquesDisponibles.length === 0 ? (
+                                        <p className="text-sm text-slate-500">No hay bloques disponibles para esa fecha.</p>
+                                    ) : (
+                                        <div className="space-y-2">
+                                            {bloquesDisponibles.map((b) => (
+                                                <label
+                                                    key={b.id}
+                                                    className={`flex cursor-pointer items-center justify-between rounded-lg border px-3 py-2.5 text-sm transition-colors ${
+                                                        bloqueId === b.id
+                                                            ? "border-[#4A2775] bg-[#4A2775]/5"
+                                                            : "border-slate-200 hover:bg-slate-50"
+                                                    }`}
+                                                >
+                                                    <span>
+                                                        {b.hora_inicio.slice(0, 5)} - {b.hora_fin.slice(0, 5)}
+                                                    </span>
+                                                    <input
+                                                        type="radio"
+                                                        name="bloque"
+                                                        value={b.id}
+                                                        checked={bloqueId === b.id}
+                                                        onChange={() => setBloqueId(b.id)}
+                                                        className="accent-[#BC367B]"
+                                                    />
+                                                </label>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="flex flex-col gap-1.5">
+                                    <label htmlFor="actividadSala" className="text-sm font-bold text-[#4A2775]">
+                                        Actividad (opcional)
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="actividadSala"
+                                        value={actividadSala}
+                                        onChange={(e) => setActividadSala(e.target.value)}
+                                        placeholder="Ej: Reunión de grupo"
+                                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#4A2775] focus:ring-4 focus:ring-[#4A2775]/15"
+                                    />
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    disabled={enviandoReserva}
+                                    className={`w-full rounded-lg py-3 text-sm font-bold text-white shadow-sm transition-colors ${
+                                        enviandoReserva
+                                            ? "cursor-not-allowed bg-slate-300 text-slate-500"
+                                            : "bg-[#BC367B] shadow-[#BC367B]/20 hover:bg-[#a12d69]"
+                                    }`}
+                                >
+                                    {enviandoReserva ? "Procesando..." : "Solicitar Reserva"}
+                                </button>
+                            </form>
+                        </div>
                     )}
         </DashboardShell>
     )

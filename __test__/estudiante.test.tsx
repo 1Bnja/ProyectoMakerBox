@@ -80,7 +80,7 @@ describe('Dashboard Estudiante - Mis solicitudes (datos reales)', () => {
         await waitFor(() => expect(screen.getByText('No autorizado')).toBeInTheDocument())
     })
 
-    it('cambia a las pestañas de ayudantías y sala correctamente', async () => {
+    it('cambia a la pestaña de ayudantías correctamente', async () => {
         mockFetchEstudiante()
         render(<EstudiantePage />)
 
@@ -88,8 +88,5 @@ describe('Dashboard Estudiante - Mis solicitudes (datos reales)', () => {
 
         fireEvent.click(screen.getByText(/ayudantías/i))
         expect(screen.getByText('Ayudantías disponibles para inscripción.')).toBeInTheDocument()
-
-        fireEvent.click(screen.getByText(/reservar sala/i))
-        expect(screen.getByText('Reserva un bloque en la sala interactiva para trabajar en tus proyectos.')).toBeInTheDocument()
     })
 })
