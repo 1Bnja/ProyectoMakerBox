@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
+import { crearUsuarioConPerfil } from "@/lib/auth/crearUsuario"
 
 export async function POST(request: Request) {
     const body = await request.json()
@@ -23,34 +24,10 @@ export async function POST(request: Request) {
     }
 
     const adminClient = createSupabaseAdminClient()
+    const resultado = await crearUsuarioConPerfil(adminClient, adminClient, { email, password, nombre, apellido, rol: "SOLICITANTE" })
 
-    const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
-        email,
-        password,
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        email_confirm: true,
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        user_metadata: { nombre, apellido, rol: "SOLICITANTE" },
-    })
-
-    if (authError) {
-        return NextResponse.json({ error: authError.message }, { status: 500 })
-    }
-
-    const { error: perfilError } = await adminClient
-        .from("perfiles")
-        .insert([{
-            id: authData.user.id,
-            nombre,
-            apellido,
-            email,
-            rol: "SOLICITANTE",
-            activo: true,
-        }])
-
-    if (perfilError) {
-        await adminClient.auth.admin.deleteUser(authData.user.id)
-        return NextResponse.json({ error: perfilError.message }, { status: 500 })
+    if (resultado.error) {
+        return NextResponse.json({ error: resultado.error }, { status: 500 })
     }
 
     return NextResponse.json({ success: true })

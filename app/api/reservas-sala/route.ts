@@ -1,23 +1,15 @@
 import { NextResponse } from "next/server"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
-import { obtenerDiaDeFecha } from "@/lib/sala/diasSemana"
+import { esFechaValida, obtenerDiaDeFecha } from "@/lib/sala/diasSemana"
+import { requireRol, requireUsuario } from "@/lib/auth/requireRol"
 
 export async function GET() {
     const supabase = await createSupabaseServerClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-        return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-    }
+    const { error: authError, user } = await requireUsuario(supabase)
+    if (authError) return authError
 
-    const { data: perfil } = await supabase
-        .from("perfiles")
-        .select("rol")
-        .eq("id", user.id)
-        .single()
-
-    if (!perfil || perfil.rol !== "AYUDANTE") {
-        return NextResponse.json({ error: "No tienes permisos para ver las reservas de la sala" }, { status: 403 })
-    }
+    const { error: rolError } = await requireRol(supabase, user, ["AYUDANTE"], "No tienes permisos para ver las reservas de la sala")
+    if (rolError) return rolError
 
     const { data, error } = await supabase
         .from("reservas_sala")
@@ -35,20 +27,11 @@ export async function GET() {
 
 export async function POST(request: Request) {
     const supabase = await createSupabaseServerClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-        return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-    }
+    const { error: authError, user } = await requireUsuario(supabase)
+    if (authError) return authError
 
-    const { data: perfil } = await supabase
-        .from("perfiles")
-        .select("rol")
-        .eq("id", user.id)
-        .single()
-
-    if (!perfil || (perfil.rol !== "SOLICITANTE" && perfil.rol !== "AYUDANTE")) {
-        return NextResponse.json({ error: "Solo un solicitante o el ayudante puede reservar la sala" }, { status: 403 })
-    }
+    const { error: rolError } = await requireRol(supabase, user, ["SOLICITANTE", "AYUDANTE"], "Solo un solicitante o el ayudante puede reservar la sala")
+    if (rolError) return rolError
 
     const body = await request.json()
     const bodyRecord = body as Record<string, unknown>
@@ -60,8 +43,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "bloque_id y fecha son requeridos" }, { status: 400 })
     }
 
-    const fechaDate = new Date(`${fecha}T00:00:00Z`)
-    if (Number.isNaN(fechaDate.getTime())) {
+    if (!esFechaValida(fecha)) {
         return NextResponse.json({ error: "Fecha inválida" }, { status: 400 })
     }
 

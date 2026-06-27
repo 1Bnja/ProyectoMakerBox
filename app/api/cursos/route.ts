@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
+import { idTieneRol, requireRol, requireUsuario } from "@/lib/auth/requireRol"
 
 interface CursoRow {
     id: string
@@ -19,10 +20,8 @@ interface CursoRow {
 
 export async function GET() {
     const supabase = await createSupabaseServerClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-        return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-    }
+    const { error: authError, user } = await requireUsuario(supabase)
+    if (authError) return authError
 
     const { data: perfil } = await supabase
         .from("perfiles")
@@ -57,20 +56,11 @@ export async function GET() {
 
 export async function POST(request: Request) {
     const supabase = await createSupabaseServerClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-        return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-    }
+    const { error: authError, user } = await requireUsuario(supabase)
+    if (authError) return authError
 
-    const { data: perfil } = await supabase
-        .from("perfiles")
-        .select("rol")
-        .eq("id", user.id)
-        .single()
-
-    if (!perfil || perfil.rol !== "AYUDANTE") {
-        return NextResponse.json({ error: "No tienes permisos para crear cursos" }, { status: 403 })
-    }
+    const { error: rolError } = await requireRol(supabase, user, ["AYUDANTE"], "No tienes permisos para crear cursos")
+    if (rolError) return rolError
 
     const body = await request.json()
     const bodyRecord = body as Record<string, unknown>
@@ -83,28 +73,12 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "El nombre del curso es requerido" }, { status: 400 })
     }
 
-    if (ayudanteId) {
-        const { data: ayudante } = await supabase
-            .from("perfiles")
-            .select("rol")
-            .eq("id", ayudanteId)
-            .single()
-
-        if (!ayudante || ayudante.rol !== "AYUDANTE") {
-            return NextResponse.json({ error: "El ayudante seleccionado no es válido" }, { status: 400 })
-        }
+    if (ayudanteId && !(await idTieneRol(supabase, ayudanteId, "AYUDANTE"))) {
+        return NextResponse.json({ error: "El ayudante seleccionado no es válido" }, { status: 400 })
     }
 
-    if (profesorId) {
-        const { data: profesor } = await supabase
-            .from("perfiles")
-            .select("rol")
-            .eq("id", profesorId)
-            .single()
-
-        if (!profesor || profesor.rol !== "PROFESOR") {
-            return NextResponse.json({ error: "El profesor seleccionado no es válido" }, { status: 400 })
-        }
+    if (profesorId && !(await idTieneRol(supabase, profesorId, "PROFESOR"))) {
+        return NextResponse.json({ error: "El profesor seleccionado no es válido" }, { status: 400 })
     }
 
     const cursoData: Record<string, unknown> = {

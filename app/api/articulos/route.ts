@@ -2,14 +2,12 @@ import { NextResponse } from "next/server"
 /* eslint-disable @typescript-eslint/naming-convention */
 
 import { createSupabaseServerClient } from "@/lib/supabase/server"
+import { requireUsuario } from "@/lib/auth/requireRol"
 
 export async function GET() {
     const supabase = await createSupabaseServerClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
-        return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-    }
+    const { error: authError } = await requireUsuario(supabase)
+    if (authError) return authError
 
     const { data, error } = await supabase
         .from("articulos")
@@ -25,11 +23,8 @@ export async function GET() {
 
 export async function POST(request: Request) {
     const supabase = await createSupabaseServerClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
-        return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-    }
+    const { error: authError } = await requireUsuario(supabase)
+    if (authError) return authError
 
     try {
         const body = await request.json()

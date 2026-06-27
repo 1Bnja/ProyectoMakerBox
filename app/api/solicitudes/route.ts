@@ -1,16 +1,11 @@
 import { NextResponse } from "next/server"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
+import { requireUsuario } from "@/lib/auth/requireRol"
 
 export async function POST(request: Request) {
     const supabase = await createSupabaseServerClient()
-
-    const {
-        data: { user },
-        error: userError,
-    } = await supabase.auth.getUser()
-    if (userError || !user) {
-        return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-    }
+    const { error: authError, user } = await requireUsuario(supabase)
+    if (authError) return authError
 
     const body = await request.json()
 
@@ -41,10 +36,8 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
     const supabase = await createSupabaseServerClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-        return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-    }
+    const { error: authError, user } = await requireUsuario(supabase)
+    if (authError) return authError
 
     const { data: perfil } = await supabase
         .from("perfiles")

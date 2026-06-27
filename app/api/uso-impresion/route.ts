@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
+import { requireUsuario } from "@/lib/auth/requireRol"
 
 /* eslint-disable @typescript-eslint/naming-convention */
 
@@ -29,13 +30,8 @@ function mapRpcError(error: { message: string; code?: string }): NextResponse {
 
 export async function GET() {
     const supabase = await createSupabaseServerClient()
-    const {
-        data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-        return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-    }
+    const { error: authError } = await requireUsuario(supabase)
+    if (authError) return authError
 
     const { data, error } = await supabase
         .from("uso_impresion")
@@ -125,13 +121,8 @@ export async function GET() {
 }
 export async function POST(request: Request) {
     const supabase = await createSupabaseServerClient()
-    const {
-        data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-        return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-    }
+    const { error: authError } = await requireUsuario(supabase)
+    if (authError) return authError
 
     let body: unknown
     try {

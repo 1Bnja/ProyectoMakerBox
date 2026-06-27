@@ -1,4 +1,6 @@
 export type Rol = 'ADMIN' | 'AYUDANTE' | 'PROFESOR' | 'ESTUDIANTE' | 'SOLICITANTE'
+
+export const rolesGestionables: Rol[] = ['AYUDANTE', 'PROFESOR']
 /* eslint-disable @typescript-eslint/naming-convention */
 const rutasPorRol: Record<Rol, string> = {
   ADMIN: '/admin',

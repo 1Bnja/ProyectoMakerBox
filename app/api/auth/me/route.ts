@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
+import { requireUsuario } from "@/lib/auth/requireRol"
 
 export async function GET() {
     const supabase = await createSupabaseServerClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-        return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-    }
+    const { error: authError, user } = await requireUsuario(supabase)
+    if (authError) return authError
 
     const { data: perfil, error } = await supabase
         .from("perfiles")

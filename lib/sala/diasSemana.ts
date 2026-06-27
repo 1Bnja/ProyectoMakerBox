@@ -19,3 +19,7 @@ export function obtenerDiaDeFecha(fecha: string): string {
 export function esDiaOperativo(fecha: string): boolean {
     return diasOperativos.includes(obtenerDiaDeFecha(fecha))
 }
+
+export function esFechaValida(fecha: string): boolean {
+    return !Number.isNaN(new Date(`${fecha}T00:00:00Z`).getTime())
+}

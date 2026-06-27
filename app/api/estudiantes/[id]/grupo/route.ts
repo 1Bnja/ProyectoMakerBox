@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import { NextResponse } from "next/server"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
+import { requireRol, requireUsuario } from "@/lib/auth/requireRol"
 
 interface GrupoDelCurso {
     id: string
@@ -17,19 +18,11 @@ interface RelacionGrupo {
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
     const supabase = await createSupabaseServerClient()
-    const {
-        data: { user },
-    } = await supabase.auth.getUser()
+    const { error: authError, user } = await requireUsuario(supabase)
+    if (authError) return authError
 
-    if (!user) {
-        return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-    }
-
-    const { data: perfil } = await supabase.from("perfiles").select("rol").eq("id", user.id).single()
-
-    if (!perfil || (perfil.rol !== "AYUDANTE" && perfil.rol !== "PROFESOR")) {
-        return NextResponse.json({ error: "No tienes permisos para asignar grupos" }, { status: 403 })
-    }
+    const { error: rolError, rol } = await requireRol(supabase, user, ["AYUDANTE", "PROFESOR"], "No tienes permisos para asignar grupos")
+    if (rolError) return rolError
 
     const { id: estudianteId } = await params
     const body = (await request.json()) as { curso_id?: unknown; grupo_id?: unknown }
@@ -61,7 +54,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         return NextResponse.json({ error: "Curso no encontrado" }, { status: 404 })
     }
 
-    if (perfil.rol === "PROFESOR" && curso.profesor_id !== user.id) {
+    if (rol === "PROFESOR" && curso.profesor_id !== user.id) {
         return NextResponse.json({ error: "Solo puedes asignar grupos en tus propios cursos" }, { status: 403 })
     }
 

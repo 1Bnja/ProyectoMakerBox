@@ -1,22 +1,14 @@
 import { NextResponse } from "next/server"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
+import { requireRol, requireUsuario } from "@/lib/auth/requireRol"
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
     const supabase = await createSupabaseServerClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-        return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-    }
+    const { error: authError, user } = await requireUsuario(supabase)
+    if (authError) return authError
 
-    const { data: perfil } = await supabase
-        .from("perfiles")
-        .select("rol")
-        .eq("id", user.id)
-        .single()
-
-    if (!perfil || perfil.rol !== "AYUDANTE") {
-        return NextResponse.json({ error: "No tienes permisos para editar estudiantes" }, { status: 403 })
-    }
+    const { error: rolError } = await requireRol(supabase, user, ["AYUDANTE"], "No tienes permisos para editar estudiantes")
+    if (rolError) return rolError
 
     const { id } = await params
     const body = await request.json()
