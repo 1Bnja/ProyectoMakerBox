@@ -8,6 +8,7 @@ import { DashboardShell } from "@/app/components/DashboardShell"
 import { EstudiantesSection } from "@/app/components/EstudiantesSection"
 import { CursosSection } from "@/app/components/CursosSection"
 import { GruposPorCursoSection } from "@/app/components/GruposPorCursoSection"
+import { AyudantiasSection } from "@/app/components/AyudantiasSection"
 import { InventarioSection } from "@/app/components/InventarioSection"
 import { DisponibilidadSalaSection } from "@/app/components/DisponibilidadSalaSection"
 import { useCursos } from "@/app/hooks/useCursos"
@@ -171,6 +172,8 @@ export default function AyudantePage() {
             )}
 
             {tab === "grupos" && <GruposPorCursoSection accent="pink" cursos={cursos} />}
+
+            {tab === "ayudantias" && <AyudantiasSection cursos={cursos} />}
 
             {tab === "inventario" && <InventarioSection />}
 

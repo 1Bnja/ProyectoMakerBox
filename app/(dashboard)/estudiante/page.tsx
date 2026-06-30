@@ -6,6 +6,8 @@ import { DataTable, type Column } from "@/app/components/DataTable"
 import { DashboardShell } from "@/app/components/DashboardShell"
 import { SectionToolbar } from "@/app/components/SectionToolbar"
 import { Button } from "@/app/components/Button"
+import { useAyudantias, type Ayudantia } from "@/app/hooks/useAyudantias"
+import { diaLabel } from "@/lib/sala/diasSemana"
 import FormularioSolicitudEstudiante from './FormularioSolicitud'
 
 interface Solicitud {
@@ -17,18 +19,9 @@ interface Solicitud {
     created_at: string
 }
 
-interface Ayudantia {
-    curso: string
-    ayudante: string
-    horario: string
-    cupos: number
+function formatHora(hora: string) {
+    return hora.slice(0, 5)
 }
-
-const ayudantias: Ayudantia[] = [
-    { curso: "Diseño 3D Avanzado", ayudante: "Lukas Avello", horario: "Lun 14:30-16:00", cupos: 5 },
-    { curso: "Prototipado Rápido", ayudante: "Camila Rojas", horario: "Mié 10:00-11:30", cupos: 2 },
-    { curso: "Introducción Impresión 3D", ayudante: "Lukas Avello", horario: "Vie 15:00-16:30", cupos: 8 },
-]
 
 const colsSolicitudes: Column<Solicitud>[] = [
     {
@@ -49,31 +42,57 @@ const colsSolicitudes: Column<Solicitud>[] = [
     },
 ]
 
-const colsAyudantias: Column<Ayudantia>[] = [
-    { key: "curso", header: "Curso" },
-    { key: "ayudante", header: "Ayudante" },
-    { key: "horario", header: "Horario" },
-    { key: "cupos", header: "Cupos" },
-    {
-        key: "accion",
-        header: "",
-        render: (a) =>
-            a.cupos > 0 ? (
-                <button className="rounded-md bg-[#4A2775] px-3 py-1.5 text-xs font-medium text-white shadow-sm shadow-[#4A2775]/20 transition-colors hover:bg-[#3a1e5e]">
-                    Inscribirse
-                </button>
-            ) : (
-                <span className="text-xs text-rose-600">Sin cupos</span>
-            ),
-    },
-]
-
 export default function EstudiantePage() {
     const [tab, setTab] = useState("solicitudes")
     const [mostrarModal, setMostrarModal] = useState(false)
     const [solicitudes, setSolicitudes] = useState<Solicitud[]>([])
     const [loadingSolicitudes, setLoadingSolicitudes] = useState(true)
     const [errorSolicitudes, setErrorSolicitudes] = useState("")
+    const { ayudantias, loading: loadingAyudantias, error: errorAyudantias, inscribirse, desinscribirse } = useAyudantias()
+    const [errorInscripcion, setErrorInscripcion] = useState("")
+
+    async function handleInscribirse(id: string) {
+        setErrorInscripcion("")
+        const resultado = await inscribirse(id)
+        if (resultado.error) setErrorInscripcion(resultado.error)
+    }
+
+    const colsAyudantias: Column<Ayudantia>[] = [
+        { key: "curso", header: "Curso", render: (a) => a.curso?.nombre ?? "—" },
+        {
+            key: "ayudante",
+            header: "Ayudante",
+            render: (a) => (a.ayudante ? `${a.ayudante.nombre} ${a.ayudante.apellido}` : "—"),
+        },
+        {
+            key: "horario",
+            header: "Horario",
+            render: (a) => `${diaLabel[a.dia] ?? a.dia} ${formatHora(a.hora_inicio)}-${formatHora(a.hora_fin)}`,
+        },
+        { key: "cupos", header: "Cupos", render: (a) => `${a.inscritos}/${a.cupos}` },
+        {
+            key: "accion",
+            header: "",
+            render: (a) =>
+                a.inscrito ? (
+                    <button
+                        onClick={() => desinscribirse(a.id)}
+                        className="rounded-md border border-rose-200 px-3 py-1.5 text-xs font-medium text-rose-600 transition-colors hover:bg-rose-50"
+                    >
+                        Desinscribirse
+                    </button>
+                ) : a.inscritos >= a.cupos ? (
+                    <span className="text-xs text-rose-600">Sin cupos</span>
+                ) : (
+                    <button
+                        onClick={() => handleInscribirse(a.id)}
+                        className="rounded-md bg-[#4A2775] px-3 py-1.5 text-xs font-medium text-white shadow-sm shadow-[#4A2775]/20 transition-colors hover:bg-[#3a1e5e]"
+                    >
+                        Inscribirse
+                    </button>
+                ),
+        },
+    ]
 
     async function cargarSolicitudes() {
         setLoadingSolicitudes(true)
@@ -126,7 +145,21 @@ export default function EstudiantePage() {
                     <p className="mb-4 text-sm text-slate-500">
                         Ayudantías disponibles para inscripción.
                     </p>
-                    <DataTable columns={colsAyudantias} data={ayudantias} />
+
+                    {errorAyudantias && (
+                        <p className="mb-4 rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-700">{errorAyudantias}</p>
+                    )}
+                    {errorInscripcion && (
+                        <p className="mb-4 rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-700">{errorInscripcion}</p>
+                    )}
+
+                    {loadingAyudantias ? (
+                        <div className="flex items-center justify-center py-16 text-sm text-slate-500">
+                            Cargando ayudantías...
+                        </div>
+                    ) : (
+                        <DataTable columns={colsAyudantias} data={ayudantias.filter((a) => a.activo)} />
+                    )}
 
                     <div className="mt-6 flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4">
                         <span className="text-lg">📌</span>

@@ -22,6 +22,7 @@ const items: Record<Rol, MenuItem[]> = {
         { id: "cursos", label: "Cursos", icon: <BookSvg /> },
         { id: "estudiantes", label: "Estudiantes", icon: <UsersSvg /> },
         { id: "grupos", label: "Grupos", icon: <GroupSvg /> },
+        { id: "ayudantias", label: "Ayudantías", icon: <HatSvg /> },
         { id: "inventario", label: "Inventario", icon: <BoxSvg /> },
         { id: "sala", label: "Disponibilidad Sala", icon: <CalendarSvg /> },
         { id: "filamento", label: "Registro Filamento", icon: <DropletSvg /> },

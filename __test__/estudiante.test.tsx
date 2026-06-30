@@ -32,8 +32,26 @@ const solicitudesFixture = [
     },
 ]
 
+const ayudantiasFixture = [
+    {
+        id: 'a1',
+        dia: 'LUNES',
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        hora_inicio: '14:30:00',
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        hora_fin: '16:00:00',
+        cupos: 5,
+        activo: true,
+        curso: { nombre: 'Diseño 3D Avanzado' },
+        ayudante: { nombre: 'Lukas', apellido: 'Avello' },
+        inscritos: 1,
+        inscrito: false,
+        estudiantes: [{ nombre: 'Pedro', apellido: 'Pérez' }],
+    },
+]
+
 function mockFetchEstudiante(ok = true) {
-    global.fetch = vi.fn((url: string | Request | URL) => {
+    global.fetch = vi.fn((url: string | Request | URL, init?: RequestInit) => {
         const u = url.toString()
 
         if (u.includes('/api/solicitudes')) {
@@ -41,6 +59,18 @@ function mockFetchEstudiante(ok = true) {
                 ok,
                 json: () => Promise.resolve(ok ? solicitudesFixture : { error: 'No autorizado' }),
             })
+        }
+
+        if (u.includes('/inscripcion') && init?.method === 'POST') {
+            return Promise.resolve({ ok: true, json: () => Promise.resolve({ ok: true }) })
+        }
+
+        if (u.includes('/inscripcion') && init?.method === 'DELETE') {
+            return Promise.resolve({ ok: true, json: () => Promise.resolve({ ok: true }) })
+        }
+
+        if (u.includes('/api/ayudantias')) {
+            return Promise.resolve({ ok: true, json: () => Promise.resolve(ayudantiasFixture) })
         }
 
         if (u.includes('/api/auth/me')) {
@@ -88,5 +118,21 @@ describe('Dashboard Estudiante - Mis solicitudes (datos reales)', () => {
 
         fireEvent.click(screen.getByText(/ayudantías/i))
         expect(screen.getByText('Ayudantías disponibles para inscripción.')).toBeInTheDocument()
+    })
+
+    it('en la pestaña Ayudantías, muestra las ayudantías disponibles y permite inscribirse', async () => {
+        mockFetchEstudiante()
+        render(<EstudiantePage />)
+
+        fireEvent.click(screen.getByText(/ayudantías/i))
+
+        await waitFor(() => expect(screen.getByText('Diseño 3D Avanzado')).toBeInTheDocument())
+        expect(screen.getByText('1/5')).toBeInTheDocument()
+
+        fireEvent.click(screen.getByText('Inscribirse'))
+
+        await waitFor(() => {
+            expect(global.fetch).toHaveBeenCalledWith('/api/ayudantias/a1/inscripcion', { method: 'POST' })
+        })
     })
 })
