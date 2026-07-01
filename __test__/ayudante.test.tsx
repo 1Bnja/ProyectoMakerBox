@@ -106,6 +106,24 @@ const gestionFixture = [
     { id: 'b3', dia: 'LUNES', hora_inicio: '11:00:00', hora_fin: '12:00:00', disponible: true, reservaId: null },
 ]
 
+const ayudantiasFixture = [
+    {
+        id: 'a1',
+        dia: 'LUNES',
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        hora_inicio: '14:30:00',
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        hora_fin: '16:00:00',
+        cupos: 5,
+        activo: true,
+        curso: { nombre: 'Construcción de Software' },
+        ayudante: { nombre: 'Ayudante', apellido: 'Test' },
+        inscritos: 1,
+        inscrito: false,
+        estudiantes: [{ nombre: 'Pedro', apellido: 'Pérez' }],
+    },
+]
+
 function mockFetchAyudante() {
     global.fetch = vi.fn((url: string | Request | URL, init?: RequestInit) => {
         const u = url.toString()
@@ -146,6 +164,26 @@ function mockFetchAyudante() {
         }
         if (u.includes('/api/cursos')) {
             return Promise.resolve({ ok: true, json: () => Promise.resolve(cursosFixture) })
+        }
+
+        if (u.includes('/api/ayudantias') && init?.method === 'POST') {
+            return Promise.resolve({
+                ok: true,
+                json: () =>
+                    Promise.resolve({
+                        id: 'a2',
+                        dia: 'MARTES',
+                        // eslint-disable-next-line @typescript-eslint/naming-convention
+                        hora_inicio: '10:00:00',
+                        // eslint-disable-next-line @typescript-eslint/naming-convention
+                        hora_fin: '11:00:00',
+                        cupos: 3,
+                        activo: true,
+                    }),
+            })
+        }
+        if (u.includes('/api/ayudantias')) {
+            return Promise.resolve({ ok: true, json: () => Promise.resolve(ayudantiasFixture) })
         }
 
         if (u.includes('/api/solicitudes/')) {
@@ -432,5 +470,57 @@ describe('IMP-03/IMP-04/IMP-05: Dashboard Ayudante - Solicitudes reales', () => 
             )
         })
         await waitFor(() => expect(screen.getByText('Grupo B')).toBeInTheDocument())
+    })
+
+    it('la pestaña Ayudantías permite ver, activar/desactivar y crear una nueva ayudantía', async () => {
+        mockFetchAyudante()
+        const { container } = render(<AyudantePage />)
+
+        await waitFor(() => expect(screen.getByText('Benjamín Silva')).toBeInTheDocument())
+        fireEvent.click(screen.getByText('Ayudantías'))
+
+        await waitFor(() => expect(screen.getByText('1/5')).toBeInTheDocument())
+        expect(screen.getByText('Construcción de Software')).toBeInTheDocument()
+
+        fireEvent.click(screen.getByText('Desactivar'))
+        await waitFor(() => {
+            expect(global.fetch).toHaveBeenCalledWith(
+                '/api/ayudantias/a1',
+                expect.objectContaining({ method: 'PATCH', body: JSON.stringify({ activo: false }) })
+            )
+        })
+
+        fireEvent.click(screen.getByText('+ Nueva Ayudantía'))
+
+        const cursoSelect = container.querySelector('select') as HTMLSelectElement
+        fireEvent.change(cursoSelect, { target: { value: 'c1' } })
+
+        const [horaInicio, horaFin] = screen.getAllByDisplayValue('') as HTMLInputElement[]
+        fireEvent.change(horaInicio, { target: { value: '10:00' } })
+        fireEvent.change(horaFin, { target: { value: '11:00' } })
+
+        fireEvent.click(screen.getByText('Crear Ayudantía'))
+
+        await waitFor(() => {
+            expect(global.fetch).toHaveBeenCalledWith(
+                '/api/ayudantias',
+                expect.objectContaining({ method: 'POST' })
+            )
+        })
+    })
+
+    it('en la pestaña Ayudantías, permite ver la lista de estudiantes inscritos', async () => {
+        mockFetchAyudante()
+        render(<AyudantePage />)
+
+        await waitFor(() => expect(screen.getByText('Benjamín Silva')).toBeInTheDocument())
+        fireEvent.click(screen.getByText('Ayudantías'))
+
+        await waitFor(() => expect(screen.getByText('1/5')).toBeInTheDocument())
+
+        fireEvent.click(screen.getByText('1/5'))
+
+        expect(screen.getByText('Estudiantes inscritos')).toBeInTheDocument()
+        expect(screen.getByText('Pedro Pérez')).toBeInTheDocument()
     })
 })
